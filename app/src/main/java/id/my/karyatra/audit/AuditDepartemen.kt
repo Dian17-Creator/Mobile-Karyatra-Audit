@@ -42,9 +42,6 @@ class AuditDepartemen : ComponentActivity() {
         setContent {
             Karyatra_AuditTheme() {
 
-                val primaryColor = Color(0xFFB63352)
-                val backColor = Color(0xFFFFF5F5)
-
                 Scaffold(
                     topBar = {
                         TopAppBar(
@@ -75,7 +72,7 @@ class AuditDepartemen : ComponentActivity() {
                                 }
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = primaryColor,
+                                containerColor = MaterialTheme.colorScheme.primary,
                                 titleContentColor = Color.White,
                                 navigationIconContentColor = Color.White
                             )
@@ -86,7 +83,7 @@ class AuditDepartemen : ComponentActivity() {
                     AuditDepartemenScreen(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(backColor)
+                            .background(MaterialTheme.colorScheme.background)
                             .padding(innerPadding)
                     )
 
