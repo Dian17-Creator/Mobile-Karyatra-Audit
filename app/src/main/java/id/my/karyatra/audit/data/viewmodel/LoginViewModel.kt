@@ -2,6 +2,7 @@ package id.my.karyatra.audit.data.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import id.my.karyatra.audit.data.ApiResult
 import id.my.karyatra.audit.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,31 +21,36 @@ class LoginViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null, isSuccess = false) }
 
-            try {
-                val response = repository.login(email, password)
+            val result = repository.login(email, password)
 
-                if (response != null && response.success) {
-                    _uiState.update { 
-                        it.copy(
-                            isLoading = false, 
-                            isSuccess = true, 
-                            userData = response.data 
-                        ) 
-                    }
-                } else {
-                    _uiState.update { 
-                        it.copy(
-                            isLoading = false, 
-                            error = response?.message ?: "Login gagal. Coba lagi." 
-                        ) 
+            when (result) {
+                is ApiResult.Success -> {
+                    val loginResponse = result.data
+                    if (loginResponse.success) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isSuccess = true,
+                                userData = loginResponse.data
+                            )
+                        }
+                    } else {
+                        // This case might not happen if backend returns non-200 for success:false
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = loginResponse.message
+                            )
+                        }
                     }
                 }
-            } catch (e: Exception) {
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false, 
-                        error = e.localizedMessage ?: "Terjadi kesalahan koneksi." 
-                    ) 
+                is ApiResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = result.message
+                        )
+                    }
                 }
             }
         }
