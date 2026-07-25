@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.my.karyatra.audit.data.SessionManager
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
 
 class AuditHome : ComponentActivity() {
@@ -54,10 +55,16 @@ class AuditHome : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val sessionManager = SessionManager(this)
+        val user = sessionManager.getUser()
+
         setContent {
             Karyatra_AuditTheme {
                 HomeScreen(
+                    username = user?.name ?: "User",
                     onLogout = {
+                        sessionManager.clearSession()
                         startActivity(Intent(this, AuditLogin::class.java))
                         finish()
                     }
