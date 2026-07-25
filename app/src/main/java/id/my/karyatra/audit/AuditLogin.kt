@@ -18,18 +18,32 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,6 +51,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import id.my.karyatra.audit.data.SessionManager
 import id.my.karyatra.audit.data.viewmodel.LoginViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.VisualTransformation
 
 class AuditLogin : ComponentActivity() {
 
@@ -62,6 +78,9 @@ fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onNavigateToHome: () -> Unit
 ) {
+    val primaryColor = Color(0xFFB63352)
+    val focusManager = LocalFocusManager.current
+
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val sessionManager = remember { SessionManager(context) }
@@ -69,6 +88,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     // Handle Login Success
     LaunchedEffect(uiState.isSuccess) {
@@ -102,7 +122,7 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Matahati Audit",
+                    text = "Karyatra Audit",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -112,7 +132,7 @@ fun LoginScreen(
                 Text(
                     text = "Silakan masuk untuk melanjutkan",
                     style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 48.dp)
+                    modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
                 )
 
                 OutlinedTextField(
@@ -121,6 +141,17 @@ fun LoginScreen(
                     label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = primaryColor,
+                        focusedLabelColor = primaryColor,
+                        cursorColor = primaryColor
+                    ),
+
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+
                     enabled = !uiState.isLoading
                 )
 
@@ -128,11 +159,44 @@ fun LoginScreen(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
+
+                    visualTransformation = if (passwordVisible)
+                        VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(image, contentDescription = null)
+                        }
+                    },
+
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 16.dp),
                     singleLine = true,
+
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = primaryColor,
+                        focusedLabelColor = primaryColor,
+                        cursorColor = primaryColor
+                    ),
+
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+
+                            if (email.isBlank() || password.isBlank()) {
+                                Toast.makeText(
+                                    context,
+                                    "Email dan Password tidak boleh kosong",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                viewModel.login(email, password)
+                            }
+                        }
+                    ),
+
                     enabled = !uiState.isLoading
                 )
 
@@ -164,7 +228,8 @@ fun LoginScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 32.dp),
+                        .padding(top = 32.dp)
+                        .height(50.dp),
                     enabled = !uiState.isLoading
                 ) {
                     Text(

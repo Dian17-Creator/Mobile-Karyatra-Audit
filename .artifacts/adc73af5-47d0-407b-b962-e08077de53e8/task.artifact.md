@@ -1,4 +1,0 @@
-- [x] Update `SessionManager.kt` to support "Remember Me"
-- [x] Add "Remember Me" Checkbox to `AuditLogin.kt`
-- [x] Update `MainActivity.kt` routing logic
-- [x] Verify functionality
