@@ -3,7 +3,7 @@ package id.my.karyatra.audit.data.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.karyatra.audit.data.ApiResult
-import id.my.karyatra.audit.data.DashboardSummaryResponse
+import id.my.karyatra.audit.data.RecentActivityData
 import id.my.karyatra.audit.data.repository.DashboardRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +15,8 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val totalKategori: String = "--",
     val totalPertanyaan: String = "--",
+    val totalAudit: String = "--",
+    val recentActivities: List<RecentActivityData> = emptyList(),
     val error: String? = null
 )
 
@@ -35,7 +37,9 @@ class HomeViewModel(
                         it.copy(
                             isLoading = false,
                             totalKategori = data?.totalKategori?.toString() ?: "0",
-                            totalPertanyaan = data?.totalPertanyaan?.toString() ?: "0"
+                            totalPertanyaan = data?.totalPertanyaan?.toString() ?: "0",
+                            totalAudit = data?.totalAudit?.toString() ?: "0",
+                            recentActivities = data?.recentActivity ?: emptyList()
                         )
                     }
                 }
@@ -45,7 +49,8 @@ class HomeViewModel(
                             isLoading = false, 
                             error = result.message,
                             totalKategori = if (it.totalKategori == "--") "-" else it.totalKategori,
-                            totalPertanyaan = if (it.totalPertanyaan == "--") "-" else it.totalPertanyaan
+                            totalPertanyaan = if (it.totalPertanyaan == "--") "-" else it.totalPertanyaan,
+                            totalAudit = if (it.totalAudit == "--") "-" else it.totalAudit
                         ) 
                     }
                 }
