@@ -15,6 +15,10 @@ interface ApiService {
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
+    // Dashboard
+    @GET("api/dashboard/summary")
+    suspend fun getDashboardSummary(): Response<DashboardSummaryResponse>
+
     // Audit Categories
     @GET("api/audit/categories")
     suspend fun getCategories(): Response<CategoryListResponse>
