@@ -16,7 +16,20 @@ object ApiErrorParser {
             val type = object : TypeToken<Map<String, Any>>() {}.type
             val errorMap: Map<String, Any> = Gson().fromJson(jsonString, type)
 
-            errorMap["message"]?.toString() ?: "Terjadi kesalahan. Silakan coba lagi."
+            val message = errorMap["message"]?.toString() ?: "Terjadi kesalahan. Silakan coba lagi."
+            
+            // Handle Laravel Validation Errors
+            val errors = errorMap["errors"] as? Map<*, *>
+            if (errors != null && errors.isNotEmpty()) {
+                val firstEntry = errors.entries.first()
+                val fieldName = firstEntry.key.toString()
+                val fieldErrors = firstEntry.value as? List<*>
+                val detail = fieldErrors?.firstOrNull()?.toString() ?: ""
+                
+                return "$message\n$fieldName: $detail"
+            }
+
+            message
         } catch (e: Exception) {
             "Terjadi kesalahan. Silakan coba lagi."
         }

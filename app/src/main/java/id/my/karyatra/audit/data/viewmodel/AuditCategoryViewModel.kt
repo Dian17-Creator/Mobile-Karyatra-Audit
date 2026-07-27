@@ -30,10 +30,6 @@ class AuditCategoryViewModel(
     private val _uiState = MutableStateFlow(AuditCategoryUiState())
     val uiState: StateFlow<AuditCategoryUiState> = _uiState.asStateFlow()
 
-    init {
-        fetchCategories()
-    }
-
     fun fetchCategories() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
