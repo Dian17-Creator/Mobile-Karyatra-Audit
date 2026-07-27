@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -27,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,6 +39,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import id.my.karyatra.audit.data.RecentActivityData
 import id.my.karyatra.audit.data.SessionManager
 import id.my.karyatra.audit.data.viewmodel.HomeViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
@@ -66,7 +70,9 @@ class AuditHome : ComponentActivity() {
 
 data class HomeMenu(
     val title: String,
-    val icon: ImageVector
+
+    @DrawableRes
+    val iconRes: Int
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,10 +102,10 @@ fun HomeScreen(
     }
 
     val menus = listOf(
-        HomeMenu("Kategori &\nPertanyaan", Icons.Default.QuestionAnswer),
-        HomeMenu("Pemetaan\nDepartemen", Icons.Default.Business),
-        HomeMenu("Audit", Icons.Default.Assignment),
-        HomeMenu("Hasil Audit", Icons.Default.AssignmentTurnedIn),
+        HomeMenu("Kategori &\nPertanyaan", R.drawable.auditquest),
+        HomeMenu("Pemetaan\nDepartemen", R.drawable.auditdept),
+        HomeMenu("Audit", R.drawable.audits),
+        HomeMenu("Hasil Audit", R.drawable.auditdone)
     )
 
     Scaffold(
@@ -136,7 +142,8 @@ fun HomeScreen(
             // 2. Summary Stats
             SummaryStatsSection(
                 totalKategori = uiState.totalKategori,
-                totalPertanyaan = uiState.totalPertanyaan
+                totalPertanyaan = uiState.totalPertanyaan,
+                totalAudit = uiState.totalAudit
             )
 
             // 3. Main Menu
@@ -150,7 +157,7 @@ fun HomeScreen(
             }
 
             // 4. Recent Activity
-            RecentActivitySection()
+            RecentActivitySection(activities = uiState.recentActivities)
 
             // 5. Logout Button
             LogoutButton(onLogout = onLogout)
@@ -199,16 +206,15 @@ fun WelcomeCard(username: String) {
             // Illustration Placeholder
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(65.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFB63352).copy(alpha = 0.1f)),
+                    .background(Color(0xFFB63352)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = Color(0xFFB63352)
+                Image(
+                    painter = painterResource(id = R.drawable.profile2),
+                    contentDescription = "Profile",
+                    modifier = Modifier.size(32.dp)
                 )
             }
         }
@@ -216,7 +222,7 @@ fun WelcomeCard(username: String) {
 }
 
 @Composable
-fun SummaryStatsSection(totalKategori: String, totalPertanyaan: String) {
+fun SummaryStatsSection(totalKategori: String, totalPertanyaan: String, totalAudit: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -237,7 +243,7 @@ fun SummaryStatsSection(totalKategori: String, totalPertanyaan: String) {
         )
         StatCard(
             title = "AUDIT",
-            value = "3",
+            value = totalAudit,
             icon = Icons.Default.Assignment,
             modifier = Modifier.weight(0.8f),
             containerColor = Color(0xFFFFF3E0) // Soft Orange
@@ -327,9 +333,9 @@ fun MenuCard(menu: HomeMenu, modifier: Modifier = Modifier, onClick: (String) ->
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = menu.icon,
+                    painter = painterResource(id = menu.iconRes),
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(24.dp),
                     tint = Color(0xFFB63352)
                 )
             }
@@ -346,7 +352,7 @@ fun MenuCard(menu: HomeMenu, modifier: Modifier = Modifier, onClick: (String) ->
 }
 
 @Composable
-fun RecentActivitySection() {
+fun RecentActivitySection(activities: List<RecentActivityData>) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -366,9 +372,54 @@ fun RecentActivitySection() {
             )
         }
         
-        ActivityItem(title = "Audit Gudang", subtitle = "Produksi • Hari ini", status = "Selesai", statusColor = Color(0xFF4CAF50))
-        ActivityItem(title = "Audit Kantor", subtitle = "Keuangan • Kemarin", status = "Berjalan", statusColor = Color(0xFF2196F3))
-        ActivityItem(title = "Audit IT", subtitle = "Teknologi • 2 hari lalu", status = "Selesai", statusColor = Color(0xFF4CAF50))
+        if (activities.isEmpty()) {
+            EmptyRecentActivity()
+        } else {
+            activities.forEach { activity ->
+                ActivityItem(
+                    title = activity.title, 
+                    subtitle = activity.subtitle, 
+                    status = activity.status, 
+                    statusColor = if (activity.status == "Selesai") Color(0xFF4CAF50) else Color(0xFF2196F3)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyRecentActivity() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Assignment,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = Color.LightGray
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Belum ada proses audit",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color.Black
+            )
+            Text(
+                text = "Proses audit yang dibuat akan muncul di sini.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
