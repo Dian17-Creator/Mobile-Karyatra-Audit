@@ -15,6 +15,7 @@ interface ApiService {
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
+    // Audit Categories
     @GET("api/audit/categories")
     suspend fun getCategories(): Response<CategoryListResponse>
 
@@ -38,5 +39,32 @@ interface ApiService {
     suspend fun deleteCategory(
         @Path("id") id: Int
     ): Response<CategoryResponse>
+
+    // Audit Questions
+    @GET("api/audit/categories/{categoryId}/questions")
+    suspend fun getQuestions(
+        @Path("categoryId") categoryId: Int
+    ): Response<QuestionListResponse>
+
+    @POST("api/audit/questions")
+    suspend fun createQuestion(
+        @Body request: QuestionRequest
+    ): Response<QuestionResponse>
+
+    @POST("api/audit/questions/{id}")
+    suspend fun updateQuestion(
+        @Path("id") id: Int,
+        @Body request: QuestionRequest
+    ): Response<QuestionResponse>
+
+    @POST("api/audit/questions/{id}/delete")
+    suspend fun deleteQuestion(
+        @Path("id") id: Int
+    ): Response<QuestionResponse>
+
+    @POST("api/audit/questions/reorder")
+    suspend fun reorderQuestions(
+        @Body request: ReorderRequest
+    ): Response<QuestionResponse>
 
 }

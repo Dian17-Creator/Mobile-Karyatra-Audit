@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +59,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -74,6 +76,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.my.karyatra.audit.data.CategoryData
 import id.my.karyatra.audit.data.viewmodel.AuditCategoryViewModel
@@ -104,8 +109,22 @@ fun AuditPertanyaanScreen(
     viewModel: AuditCategoryViewModel = viewModel(),
     onBack: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.fetchCategories()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val primaryColor = Color(0xFFB63352)
     val backColor = Color(0xFFFFF5F5)
@@ -181,6 +200,14 @@ fun AuditPertanyaanScreen(
                         items(uiState.categories) { category ->
                             CategoryCard(
                                 category = category,
+                                onClick = {
+                                    val intent = Intent(context, AuditDetailPertanyaanActivity::class.java).apply {
+                                        putExtra("category_id", category.id)
+                                        putExtra("category_name", category.name)
+                                        putExtra("category_description", category.description)
+                                    }
+                                    context.startActivity(intent)
+                                },
                                 onEdit = { viewModel.openEditDialog(category) },
                                 onDelete = { viewModel.openDeleteDialog(category) }
                             )
@@ -286,11 +313,14 @@ fun AnimatedDialog(
 @Composable
 fun CategoryCard(
     category: CategoryData,
+    onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
