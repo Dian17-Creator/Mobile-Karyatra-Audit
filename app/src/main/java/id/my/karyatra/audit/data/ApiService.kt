@@ -71,4 +71,18 @@ interface ApiService {
         @Body request: ReorderRequest
     ): Response<QuestionResponse>
 
+    // Audit Departments & Mapping
+    @GET("api/audit/departments")
+    suspend fun getDepartments(): Response<DepartmentListResponse>
+
+    @GET("api/audit/departments/{id}/mapping")
+    suspend fun getDepartmentMapping(
+        @Path("id") id: Int
+    ): Response<DepartmentMappingResponse>
+
+    @POST("api/audit/departments/mapping")
+    suspend fun saveDepartmentMapping(
+        @Body request: SaveMappingRequest
+    ): Response<GenericResponse>
+
 }
