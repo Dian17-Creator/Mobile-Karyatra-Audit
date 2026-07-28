@@ -237,7 +237,7 @@ fun SummaryStatsSection(totalKategori: String, totalPertanyaan: String, totalAud
         StatCard(
             title = "TOTAL PERTANYAAN",
             value = totalPertanyaan,
-            icon = Icons.Default.Quiz,
+            icon = Icons.Default.QuestionAnswer,
             modifier = Modifier.weight(1.2f),
             containerColor = Color(0xFFF1F8E9) // Soft Green
         )

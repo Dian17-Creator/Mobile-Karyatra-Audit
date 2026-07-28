@@ -18,7 +18,7 @@ object ApiErrorParser {
 
             val message = errorMap["message"]?.toString() ?: "Terjadi kesalahan. Silakan coba lagi."
             
-            // Handle Laravel Validation Errors
+            // Handle Laravel Validation Errors (HTTP 422)
             val errors = errorMap["errors"] as? Map<*, *>
             if (errors != null && errors.isNotEmpty()) {
                 val firstEntry = errors.entries.first()
@@ -29,6 +29,7 @@ object ApiErrorParser {
                 return "$message\n$fieldName: $detail"
             }
 
+            // Return plain message for 409, 404, 500 etc.
             message
         } catch (e: Exception) {
             "Terjadi kesalahan. Silakan coba lagi."

@@ -73,8 +73,12 @@ class AuditQuestionViewModel(
             val request = QuestionRequest(categoryId = categoryId, question = questionText)
             when (val result = repository.createQuestion(request)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, isAddDialogOpen = false, successMessage = result.data.message) }
-                    fetchQuestions(categoryId)
+                    if (result.data.success) {
+                        _uiState.update { it.copy(isLoading = false, isAddDialogOpen = false, successMessage = result.data.message) }
+                        fetchQuestions(categoryId)
+                    } else {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.data.message) }
+                    }
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
@@ -89,8 +93,12 @@ class AuditQuestionViewModel(
             val request = QuestionRequest(question = questionText)
             when (val result = repository.updateQuestion(id, request)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, isEditDialogOpen = false, successMessage = result.data.message) }
-                    fetchQuestions(categoryId)
+                    if (result.data.success) {
+                        _uiState.update { it.copy(isLoading = false, isEditDialogOpen = false, successMessage = result.data.message) }
+                        fetchQuestions(categoryId)
+                    } else {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.data.message) }
+                    }
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
@@ -104,8 +112,12 @@ class AuditQuestionViewModel(
             _uiState.update { it.copy(isLoading = true) }
             when (val result = repository.deleteQuestion(id)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }
-                    fetchQuestions(categoryId)
+                    if (result.data.success) {
+                        _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }
+                        fetchQuestions(categoryId)
+                    } else {
+                        _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, errorMessage = result.data.message) }
+                    }
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, errorMessage = result.message) }
@@ -137,8 +149,13 @@ class AuditQuestionViewModel(
             val request = ReorderRequest(categoryId = categoryId, questionIds = ids)
             when (val result = repository.reorderQuestions(request)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, successMessage = result.data.message) }
-                    fetchQuestions(categoryId)
+                    if (result.data.success) {
+                        _uiState.update { it.copy(isLoading = false, successMessage = result.data.message) }
+                        fetchQuestions(categoryId)
+                    } else {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.data.message) }
+                        fetchQuestions(categoryId) // Revert to server state
+                    }
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }

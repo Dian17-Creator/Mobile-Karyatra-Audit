@@ -74,8 +74,12 @@ class AuditCategoryViewModel(
             val request = CategoryRequest(name, description)
             when (val result = repository.createCategory(request)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, isAddDialogOpen = false, successMessage = result.data.message) }
-                    fetchCategories()
+                    if (result.data.success) {
+                        _uiState.update { it.copy(isLoading = false, isAddDialogOpen = false, successMessage = result.data.message) }
+                        fetchCategories()
+                    } else {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.data.message) }
+                    }
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
@@ -90,8 +94,12 @@ class AuditCategoryViewModel(
             val request = CategoryRequest(name, description)
             when (val result = repository.updateCategory(id, request)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, isEditDialogOpen = false, successMessage = result.data.message) }
-                    fetchCategories()
+                    if (result.data.success) {
+                        _uiState.update { it.copy(isLoading = false, isEditDialogOpen = false, successMessage = result.data.message) }
+                        fetchCategories()
+                    } else {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.data.message) }
+                    }
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
@@ -105,8 +113,12 @@ class AuditCategoryViewModel(
             _uiState.update { it.copy(isLoading = true) }
             when (val result = repository.deleteCategory(id)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }
-                    fetchCategories()
+                    if (result.data.success) {
+                        _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }
+                        fetchCategories()
+                    } else {
+                        _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, errorMessage = result.data.message) }
+                    }
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, errorMessage = result.message) }
