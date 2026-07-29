@@ -214,7 +214,7 @@ fun DepartmentSelector(
                 readOnly = true,
                 label = { Text("Departemen") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                modifier = Modifier.fillMaxWidth().menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                 shape = RoundedCornerShape(12.dp)
             )
 
