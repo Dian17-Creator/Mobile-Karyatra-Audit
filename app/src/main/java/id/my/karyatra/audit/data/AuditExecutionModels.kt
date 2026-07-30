@@ -3,7 +3,8 @@ package id.my.karyatra.audit.data
 import com.google.gson.annotations.SerializedName
 
 data class AuditCreateRequest(
-    @SerializedName("department_id") val departmentId: Int
+    @SerializedName("department_id") val departmentId: Int,
+    @SerializedName("auditor_id") val auditorId: Int
 )
 
 data class AuditCreateData(
