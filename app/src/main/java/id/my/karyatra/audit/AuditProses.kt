@@ -17,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -88,6 +89,10 @@ fun AuditExecutionScreen(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val userId = remember { sessionManager.getUser()?.id ?: 1 }
+    
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -177,7 +182,7 @@ fun AuditExecutionScreen(
                     existingDraftId = uiState.existingDraftId,
                     isLoading = uiState.isLoading,
                     onSelect = { viewModel.selectDepartment(it) },
-                    onStart = { viewModel.startAudit() }
+                    onStart = { viewModel.startAudit(userId) }
                 )
             } else {
                 AuditExecutionContent(
@@ -319,7 +324,7 @@ fun AuditExecutionContent(
                             Text(text = "Departemen", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             Text(text = audit.departmentName, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                         }
-                        StatusChip(status = audit.status)
+                        StatusChip(status = audit.status, isSolid = true)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(modifier = Modifier.fillMaxWidth()) {
@@ -431,22 +436,22 @@ fun AuditExecutionContent(
 }
 
 @Composable
-fun StatusChip(status: String) {
+fun StatusChip(status: String, isSolid: Boolean = false) {
     val color = when (status) {
         "Submitted" -> Color(0xFF4CAF50)
         "Draft" -> Color(0xFF2196F3)
         else -> Color.Gray
     }
     Surface(
-        color = color.copy(alpha = 0.1f),
+        color = if (isSolid) color else color.copy(alpha = 0.1f),
         shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.5f))
+        border = if (isSolid) null else androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.5f))
     ) {
         Text(
             text = status,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-            color = color
+            color = if (isSolid) Color.White else color
         )
     }
 }
@@ -886,8 +891,8 @@ fun SubmitAuditDialog(
     if (showSourceDialog) {
         AlertDialog(
             onDismissRequest = { showSourceDialog = false },
-            title = { Text("Pilih Foto Verifikasi") },
-            text = { Text("Ambil foto dari kamera atau pilih dari galeri.") },
+            title = { Text("Pilih Foto Verifikasi", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+            text = { Text("Ambil foto dari kamera atau pilih dari galeri untuk melengkapi verifikasi audit.") },
             confirmButton = {
                 TextButton(onClick = {
                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -900,7 +905,7 @@ fun SubmitAuditDialog(
                     }
                     showSourceDialog = false
                 }) {
-                    Text("Kamera")
+                    Text("Kamera", color = Color(0xFFB63352), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -908,56 +913,153 @@ fun SubmitAuditDialog(
                     galleryLauncher.launch("image/*")
                     showSourceDialog = false
                 }) {
-                    Text("Galeri")
+                    Text("Galeri", color = Color.Gray)
                 }
-            }
+            },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White
         )
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Verifikasi & Selesaikan Audit", fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            tonalElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                Text(
+                    text = "Verifikasi & Selesaikan",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                    color = Color.Black
+                )
+                
+                Text(
+                    text = "Lengkapi data perwakilan dan foto verifikasi sebelum menyelesaikan audit ini.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+
+                val brandColor = Color(0xFFB63352)
+
                 OutlinedTextField(
                     value = auditeeName,
                     onValueChange = { auditeeName = it },
-                    label = { Text("Nama Perwakilan Departemen") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Nama Perwakilan") },
+                    placeholder = { Text("Nama PIC Departemen") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = brandColor,
+                        focusedLabelColor = brandColor,
+                        cursorColor = brandColor
+                    ),
+                    singleLine = true
                 )
                 
-                Button(
-                    onClick = { showSourceDialog = true },
+                if (photoFile != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(16.dp))
+                    ) {
+                        AsyncImage(
+                            model = photoFile,
+                            contentDescription = "Preview",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
+                                .size(32.dp)
+                                .clickable { photoFile = null },
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.5f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remove",
+                                tint = Color.White,
+                                modifier = Modifier.padding(6.dp)
+                            )
+                        }
+                    }
+                } else {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .clickable { showSourceDialog = true },
+                        shape = RoundedCornerShape(16.dp),
+                        color = brandColor.copy(alpha = 0.05f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, brandColor.copy(alpha = 0.2f))
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddAPhoto,
+                                contentDescription = null,
+                                tint = brandColor,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Ambil Foto Verifikasi",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = brandColor
+                            )
+                        }
+                    }
+                }
+
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.Black)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (photoFile != null) "Foto Berhasil Dipilih" else "Ambil Foto Verifikasi", color = Color.Black)
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
+                    ) {
+                        Text("Batal", color = Color.Gray)
+                    }
+
+                    Button(
+                        onClick = { photoFile?.let { onSubmit(auditeeName, it) } },
+                        enabled = auditeeName.isNotBlank() && photoFile != null && !isSubmitting,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        if (isSubmitting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Selesaikan", fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = { photoFile?.let { onSubmit(auditeeName, it) } },
-                enabled = auditeeName.isNotBlank() && photoFile != null && !isSubmitting,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-            ) {
-            if (isSubmitting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = Color.White,
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text("Selesaikan Audit")
-            }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Batal") }
         }
-    )
+    }
 }
 
 // Utility to convert Uri to File, fix orientation, and compress

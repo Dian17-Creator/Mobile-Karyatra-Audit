@@ -12,9 +12,9 @@ class AuditExecutionRepository {
 
     private val api = RetrofitClientLaravel.instance
 
-    suspend fun createAudit(departmentId: Int): ApiResult<AuditCreateResponse> {
+    suspend fun createAudit(departmentId: Int, auditorId: Int): ApiResult<AuditCreateResponse> {
         return try {
-            val response = api.createAudit(AuditCreateRequest(departmentId))
+            val response = api.createAudit(AuditCreateRequest(departmentId, auditorId))
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -154,6 +154,23 @@ class AuditExecutionRepository {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
                 else ApiResult.Error("Data audit tidak ditemukan")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}. Periksa koneksi internet Anda.")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun deleteAudit(auditId: Int): ApiResult<AuditUpdateResponse> {
+        return try {
+            val response = api.deleteAudit(GenericIdRequest(auditId))
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Gagal menghapus audit")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
             }

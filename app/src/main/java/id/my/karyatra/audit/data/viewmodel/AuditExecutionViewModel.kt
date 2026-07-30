@@ -85,7 +85,7 @@ class AuditExecutionViewModel(
         }
     }
 
-    fun startAudit() {
+    fun startAudit(auditorId: Int) {
         val state = _uiState.value
         val deptId = state.selectedDepartment?.id ?: return
         
@@ -96,7 +96,7 @@ class AuditExecutionViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = executionRepository.createAudit(deptId)) {
+            when (val result = executionRepository.createAudit(deptId, auditorId)) {
                 is ApiResult.Success -> {
                     val auditId = result.data.data?.id
                     if (auditId != null) {
