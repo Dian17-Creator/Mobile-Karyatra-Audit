@@ -386,7 +386,7 @@ fun RecentActivitySection(activities: List<RecentActivityData>, onActivityClick:
                     title = activity.title, 
                     subtitle = activity.subtitle, 
                     status = activity.status, 
-                    statusColor = if (activity.status == "Selesai") Color(0xFF4CAF50) else Color(0xFF2196F3),
+                    statusColor = if (activity.status == "Selesai" || activity.status == "Submitted") Color(0xFF4CAF50) else Color(0xFF2196F3),
                     onClick = { onActivityClick(activity.id) }
                 )
             }
@@ -432,6 +432,8 @@ fun EmptyRecentActivity() {
 
 @Composable
 fun ActivityItem(title: String, subtitle: String, status: String, statusColor: Color, onClick: () -> Unit) {
+    val isFinished = status == "Selesai" || status == "Submitted"
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -450,14 +452,14 @@ fun ActivityItem(title: String, subtitle: String, status: String, statusColor: C
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFB63352).copy(alpha = 0.05f)),
+                    .background(statusColor.copy(alpha = 0.05f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.History,
+                    imageVector = if (isFinished) Icons.Default.CheckCircle else Icons.Default.History,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp),
-                    tint = Color(0xFFB63352)
+                    tint = statusColor
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
