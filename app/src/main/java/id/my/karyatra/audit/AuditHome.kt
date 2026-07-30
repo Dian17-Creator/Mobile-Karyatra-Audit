@@ -157,7 +157,13 @@ fun HomeScreen(
             }
 
             // 4. Recent Activity
-            RecentActivitySection(activities = uiState.recentActivities)
+            RecentActivitySection(activities = uiState.recentActivities) { activityId ->
+                context.startActivity(
+                    Intent(context, AuditProses::class.java).apply {
+                        putExtra("audit_id", activityId)
+                    }
+                )
+            }
 
             // 5. Logout Button
             LogoutButton(onLogout = onLogout)
@@ -352,7 +358,7 @@ fun MenuCard(menu: HomeMenu, modifier: Modifier = Modifier, onClick: (String) ->
 }
 
 @Composable
-fun RecentActivitySection(activities: List<RecentActivityData>) {
+fun RecentActivitySection(activities: List<RecentActivityData>, onActivityClick: (Int) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -380,7 +386,8 @@ fun RecentActivitySection(activities: List<RecentActivityData>) {
                     title = activity.title, 
                     subtitle = activity.subtitle, 
                     status = activity.status, 
-                    statusColor = if (activity.status == "Selesai") Color(0xFF4CAF50) else Color(0xFF2196F3)
+                    statusColor = if (activity.status == "Selesai") Color(0xFF4CAF50) else Color(0xFF2196F3),
+                    onClick = { onActivityClick(activity.id) }
                 )
             }
         }
@@ -424,9 +431,11 @@ fun EmptyRecentActivity() {
 }
 
 @Composable
-fun ActivityItem(title: String, subtitle: String, status: String, statusColor: Color) {
+fun ActivityItem(title: String, subtitle: String, status: String, statusColor: Color, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)

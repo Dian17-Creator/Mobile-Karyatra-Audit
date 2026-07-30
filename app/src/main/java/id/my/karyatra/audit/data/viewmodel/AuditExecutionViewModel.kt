@@ -40,7 +40,10 @@ class AuditExecutionViewModel(
 
     private var autosaveJob: Job? = null
 
-    init {
+    fun initialize(auditId: Int) {
+        if (auditId != -1) {
+            fetchAuditDetail(auditId)
+        }
         fetchInitialData()
     }
 

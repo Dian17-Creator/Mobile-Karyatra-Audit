@@ -89,7 +89,20 @@ class AuditExecutionRepository {
     }
 
     suspend fun updatePhotoDetail(photoId: Int, observation: String?, recommendation: String?): ApiResult<AuditUpdateResponse> {
-        return ApiResult.Error("Operasi ini belum didukung oleh backend.")
+        return try {
+            val response = api.updateAuditPhoto(AuditPhotoUpdateData(photoId, observation, recommendation))
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Gagal memperbarui detail foto")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}. Periksa koneksi internet Anda.")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
+        }
     }
 
     suspend fun deletePhoto(photoId: Int): ApiResult<AuditUpdateResponse> {
