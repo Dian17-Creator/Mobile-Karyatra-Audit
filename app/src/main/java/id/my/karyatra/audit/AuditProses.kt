@@ -785,10 +785,10 @@ fun PhotoDetailDialog(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 24.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
                 
                 AsyncImage(
                     model = photo.photoPath,
@@ -836,7 +836,7 @@ fun PhotoDetailDialog(
                     shape = RoundedCornerShape(12.dp)
                 )
                 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
