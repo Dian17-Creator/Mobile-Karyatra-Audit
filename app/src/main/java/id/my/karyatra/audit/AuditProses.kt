@@ -48,6 +48,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -64,9 +65,11 @@ class AuditProses : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val auditId = intent.getIntExtra("audit_id", -1)
         setContent {
             Karyatra_AuditTheme {
                 AuditExecutionScreen(
+                    auditId = auditId,
                     onBack = {
                         startActivity(Intent(this, AuditHome::class.java))
                         finish()
@@ -80,6 +83,7 @@ class AuditProses : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuditExecutionScreen(
+    auditId: Int = -1,
     viewModel: AuditExecutionViewModel = viewModel(),
     onBack: () -> Unit
 ) {
@@ -87,6 +91,10 @@ fun AuditExecutionScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        viewModel.initialize(auditId)
+    }
 
     val primaryColor = Color(0xFFB63352)
     val backColor = Color(0xFFF8F9FB)
@@ -668,16 +676,19 @@ fun QuestionExecutionCard(
                     }
                 }
                 
+//                Spacer(modifier = Modifier.height(8.dp))
+
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     question.photos.forEach { photo ->
                         AsyncImage(
                             model = photo.photoPath,
                             contentDescription = null,
                             modifier = Modifier
-                                .size(60.dp)
+                                .size(53.5.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color.LightGray)
                                 .clickable { onPhotoClick(photo) },
@@ -736,63 +747,96 @@ fun PhotoDetailDialog(
     var recommendation by remember { mutableStateOf(photo.action ?: "") }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                TopAppBar(
-                    title = { Text("Detail Foto Temuan") },
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text("Detail Foto Temuan", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
                     navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
                     actions = {
                         if (!isReadOnly) {
                             IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, null, tint = Color.Red) }
-                            IconButton(onClick = { onSave(observation, recommendation) }) { Icon(Icons.Default.Save, null) }
                         }
                     }
                 )
-                
-                Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-                    AsyncImage(
-                        model = photo.photoPath,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxWidth().height(300.dp).clip(RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Fit
-                    )
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    OutlinedTextField(
-                        value = observation,
-                        onValueChange = { observation = it },
-                        label = { Text("Hasil Pengamatan") },
+            },
+            bottomBar = {
+                if (!isReadOnly) {
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !isReadOnly,
-                        minLines = 3
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    OutlinedTextField(
-                        value = recommendation,
-                        onValueChange = { recommendation = it },
-                        label = { Text("Rekomendasi") },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isReadOnly,
-                        minLines = 3
-                    )
-                    
-                    if (!isReadOnly) {
-                        Spacer(modifier = Modifier.height(32.dp))
+                        tonalElevation = 8.dp,
+                        shadowElevation = 8.dp
+                    ) {
                         Button(
                             onClick = { onSave(observation, recommendation) },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(16.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB63352))
                         ) {
-                            Text("Simpan Perubahan")
+                            Text("Simpan Perubahan", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
+            }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                AsyncImage(
+                    model = photo.photoPath,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Fit
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+
+                val brandColor = Color(0xFFB63352)
+                
+                OutlinedTextField(
+                    value = observation,
+                    onValueChange = { observation = it },
+                    label = { Text("Hasil Pengamatan") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isReadOnly,
+                    minLines = 3,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = brandColor,
+                        focusedLabelColor = brandColor,
+                        cursorColor = brandColor
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                OutlinedTextField(
+                    value = recommendation,
+                    onValueChange = { recommendation = it },
+                    label = { Text("Rekomendasi") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isReadOnly,
+                    minLines = 3,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = brandColor,
+                        focusedLabelColor = brandColor,
+                        cursorColor = brandColor
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
@@ -916,24 +960,46 @@ fun SubmitAuditDialog(
     )
 }
 
-// Utility to convert Uri to File and compress
+// Utility to convert Uri to File, fix orientation, and compress
 fun uriToFile(context: Context, uri: Uri): File? {
     return try {
-        val inputStream = context.contentResolver.openInputStream(uri)
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        
+        // Read Exif orientation
+        val exifInputStream = context.contentResolver.openInputStream(uri)
+        val orientation = exifInputStream?.use {
+            val exif = ExifInterface(it)
+            exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+        } ?: ExifInterface.ORIENTATION_NORMAL
+
+        val bitmap = BitmapFactory.decodeStream(inputStream)
+        inputStream.close()
+
+        // Rotate bitmap if needed
+        val rotatedBitmap = when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(bitmap, 90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(bitmap, 180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> rotateImage(bitmap, 270f)
+            else -> bitmap
+        }
+
         val file = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
         val outputStream = FileOutputStream(file)
-        
-        // Simple compression
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
-        
+        rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
         outputStream.flush()
         outputStream.close()
-        outputStream.close()
-        inputStream?.close()
+        
+        if (rotatedBitmap != bitmap) bitmap.recycle()
+        
         file
     } catch (e: Exception) {
         e.printStackTrace()
         null
     }
+}
+
+private fun rotateImage(source: Bitmap, angle: Float): Bitmap {
+    val matrix = android.graphics.Matrix()
+    matrix.postRotate(angle)
+    return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
 }

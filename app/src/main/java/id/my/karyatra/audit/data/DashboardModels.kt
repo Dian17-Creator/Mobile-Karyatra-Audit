@@ -3,6 +3,7 @@ package id.my.karyatra.audit.data
 import com.google.gson.annotations.SerializedName
 
 data class RecentActivityData(
+    @SerializedName("id") val id: Int,
     @SerializedName("title") val title: String,
     @SerializedName("subtitle") val subtitle: String,
     @SerializedName("status") val status: String

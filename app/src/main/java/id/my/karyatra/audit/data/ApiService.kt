@@ -109,6 +109,11 @@ interface ApiService {
         @retrofit2.http.Part photo: okhttp3.MultipartBody.Part
     ): Response<AuditUpdateResponse>
 
+    @POST("api/audits/update-photo")
+    suspend fun updateAuditPhoto(
+        @Body request: AuditPhotoUpdateData
+    ): Response<AuditUpdateResponse>
+
     @POST("api/audits/delete-photo")
     suspend fun deleteAuditPhoto(
         @Body request: AuditDeletePhotoRequest
