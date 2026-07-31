@@ -2,6 +2,7 @@ package id.my.karyatra.audit
 
 import android.app.DatePickerDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -384,6 +385,7 @@ fun AuditReportDetailDialog(
     detail: AuditDetailContainer,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     val audit = detail.audit
     val primaryColor = Color(0xFFB63352)
 
@@ -394,7 +396,14 @@ fun AuditReportDetailDialog(
                     title = { Text(audit.documentId, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
                     navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
                     actions = {
-                        StatusChip(status = audit.status, isSolid = true)
+                        IconButton(onClick = {
+                            val url = "https://audit-laravel.karyatra.cloud/api/audits/${audit.id}/export-pdf"
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            context.startActivity(intent)
+                        }) {
+                            Icon(Icons.Default.Print, contentDescription = "Download PDF")
+                        }
+//                        StatusChip(status = audit.status, isSolid = true)
                         Spacer(modifier = Modifier.width(16.dp))
                     },
                     colors = TopAppBarDefaults.topAppBarColors(

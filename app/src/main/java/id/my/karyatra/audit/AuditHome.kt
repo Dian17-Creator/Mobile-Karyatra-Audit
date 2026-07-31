@@ -503,7 +503,8 @@ fun LogoutButton(onLogout: () -> Unit) {
         Icon(
             imageVector = Icons.Default.Logout,
             contentDescription = null,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp),
+            tint = Color.White
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(

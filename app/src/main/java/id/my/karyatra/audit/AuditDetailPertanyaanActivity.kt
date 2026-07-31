@@ -292,7 +292,7 @@ fun QuestionCard(
                         fontWeight = FontWeight.Normal,
                         lineHeight = 22.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = Color.DarkGray,
                     modifier = Modifier.fillMaxWidth()
                 )
 
