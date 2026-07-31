@@ -437,7 +437,7 @@ fun AddEditCategoryDialogContent(
         modifier = Modifier
             .fillMaxWidth(0.9f),
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface,
+        color = Color.White,
         tonalElevation = 8.dp
     ) {
         Column(
