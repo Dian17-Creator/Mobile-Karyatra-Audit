@@ -408,10 +408,13 @@ fun AddEditQuestionDialogContent(
     var text by remember { mutableStateOf(initialText) }
     var error by remember { mutableStateOf(false) }
 
+    val bgcolor = Color(0xFFFFF5F4)
+    val primaryColor = Color(0xFFB63352)
+
     Surface(
         modifier = Modifier.fillMaxWidth(0.9f),
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface,
+        color = bgcolor,
         tonalElevation = 8.dp
     ) {
         Column(
@@ -429,9 +432,36 @@ fun AddEditQuestionDialogContent(
                 supportingText = { if (error) Text("Pertanyaan tidak boleh kosong") },
                 shape = RoundedCornerShape(12.dp),
                 colors = TextFieldDefaults.colors(
+
+                    // Background
+                    focusedContainerColor = Color(0xFFF3F0F5),
+                    unfocusedContainerColor = Color(0xFFF3F0F5),
+                    disabledContainerColor = Color(0xFFF3F0F5),
+                    errorContainerColor = Color(0xFFF3F0F5),
+
+                    // Text
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    disabledTextColor = Color.Gray,
+                    errorTextColor = Color.Black,
+
+                    // Label
+                    focusedLabelColor = primaryColor,
+                    unfocusedLabelColor = Color.Gray,
+                    errorLabelColor = Color.Red,
+
+                    // Cursor
+                    cursorColor = primaryColor,
+
+                    // Indicator
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    errorIndicatorColor = Color.Transparent
+                    disabledIndicatorColor = Color.Transparent,
+                    errorIndicatorColor = Color.Transparent,
+
+                    // Placeholder
+                    focusedPlaceholderColor = Color.Gray,
+                    unfocusedPlaceholderColor = Color.Gray
                 )
             )
 

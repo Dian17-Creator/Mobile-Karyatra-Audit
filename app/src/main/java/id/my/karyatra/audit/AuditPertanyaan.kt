@@ -433,11 +433,14 @@ fun AddEditCategoryDialogContent(
     var desc by remember { mutableStateOf(initialDesc) }
     var nameError by remember { mutableStateOf(false) }
 
+    val bgcolor = Color(0xFFFFF5F4)
+    val primaryColor = Color(0xFFB63352)
+
     Surface(
         modifier = Modifier
             .fillMaxWidth(0.9f),
         shape = RoundedCornerShape(24.dp),
-        color = Color.White,
+        color = bgcolor,
         tonalElevation = 8.dp
     ) {
         Column(
@@ -456,18 +459,50 @@ fun AddEditCategoryDialogContent(
                         name = it
                         nameError = false
                     },
-                    label = { Text("Nama Kategori") },
+                    label = {
+                        Text("Nama Kategori")
+                    },
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
                     isError = nameError,
-                    supportingText = { if (nameError) Text("Nama wajib diisi") },
+                    supportingText = {
+                        if (nameError) {
+                            Text("Nama wajib diisi")
+                        }
+                    },
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.colors(
+
+                        // Background
+                        focusedContainerColor = Color(0xFFF3F0F5),
+                        unfocusedContainerColor = Color(0xFFF3F0F5),
+                        disabledContainerColor = Color(0xFFF3F0F5),
+                        errorContainerColor = Color(0xFFF3F0F5),
+
+                        // Text
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        disabledTextColor = Color.Gray,
+                        errorTextColor = Color.Black,
+
+                        // Label
+                        focusedLabelColor = primaryColor,
+                        unfocusedLabelColor = Color.Gray,
+                        errorLabelColor = Color.Red,
+
+                        // Cursor
+                        cursorColor = primaryColor,
+
+                        // Indicator
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent,
-                        errorIndicatorColor = Color.Transparent
-                    ),
-                    singleLine = true
+                        errorIndicatorColor = Color.Transparent,
+
+                        // Placeholder
+                        focusedPlaceholderColor = Color.Gray,
+                        unfocusedPlaceholderColor = Color.Gray
+                    )
                 )
                 
                 TextField(
@@ -479,9 +514,36 @@ fun AddEditCategoryDialogContent(
                         .heightIn(min = 85.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.colors(
+
+                        // Background
+                        focusedContainerColor = Color(0xFFF3F0F5),
+                        unfocusedContainerColor = Color(0xFFF3F0F5),
+                        disabledContainerColor = Color(0xFFF3F0F5),
+                        errorContainerColor = Color(0xFFF3F0F5),
+
+                        // Text
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        disabledTextColor = Color.Gray,
+                        errorTextColor = Color.Black,
+
+                        // Label
+                        focusedLabelColor = primaryColor,
+                        unfocusedLabelColor = Color.Gray,
+                        errorLabelColor = Color.Red,
+
+                        // Cursor
+                        cursorColor = primaryColor,
+
+                        // Indicator
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
+                        disabledIndicatorColor = Color.Transparent,
+                        errorIndicatorColor = Color.Transparent,
+
+                        // Placeholder
+                        focusedPlaceholderColor = Color.Gray,
+                        unfocusedPlaceholderColor = Color.Gray
                     )
                 )
             }
