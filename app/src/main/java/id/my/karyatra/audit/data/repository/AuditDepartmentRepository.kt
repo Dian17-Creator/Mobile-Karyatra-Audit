@@ -1,27 +1,50 @@
 package id.my.karyatra.audit.data.repository
 
+import android.content.Context
 import id.my.karyatra.audit.data.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.io.IOException
 
-class AuditDepartmentRepository {
+class AuditDepartmentRepository(context: Context) {
 
     private val api = RetrofitClientLaravel.instance
+    private val cache = DataCacheManager(context)
 
-    suspend fun getDepartments(): ApiResult<DepartmentListResponse> {
-        return try {
+    companion object {
+        private const val CACHE_KEY_DEPARTMENTS = "audit_departments_list"
+    }
+
+    fun getDepartments(): Flow<ApiResult<DepartmentListResponse>> = flow {
+        val cached = getCachedDepartments()
+        if (cached != null) {
+            emit(ApiResult.Success(cached))
+        }
+
+        try {
             val response = api.getDepartments()
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
-                else ApiResult.Error("Data tidak ditemukan")
-            } else {
-                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+                if (body != null) {
+                    if (body != cached) {
+                        cache.save(CACHE_KEY_DEPARTMENTS, body)
+                        emit(ApiResult.Success(body))
+                    }
+                } else if (cached == null) {
+                    emit(ApiResult.Error("Data tidak ditemukan"))
+                }
+            } else if (cached == null) {
+                emit(ApiResult.Error(ApiErrorParser.parseError(response.errorBody())))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}. Periksa koneksi internet Anda.")
+            if (cached == null) emit(ApiResult.Error("Kesalahan Koneksi: ${e.message}"))
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+            if (cached == null) emit(ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}"))
         }
+    }
+
+    fun getCachedDepartments(): DepartmentListResponse? {
+        return cache.get(CACHE_KEY_DEPARTMENTS, DepartmentListResponse::class.java)
     }
 
     suspend fun getDepartmentMapping(id: Int): ApiResult<DepartmentMappingResponse> {
@@ -35,9 +58,9 @@ class AuditDepartmentRepository {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}. Periksa koneksi internet Anda.")
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
     }
 
@@ -52,9 +75,9 @@ class AuditDepartmentRepository {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}. Periksa koneksi internet Anda.")
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
     }
 }

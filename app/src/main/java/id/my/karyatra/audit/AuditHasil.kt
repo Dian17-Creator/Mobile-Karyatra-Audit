@@ -1,6 +1,5 @@
 package id.my.karyatra.audit
 
-import android.app.DatePickerDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -8,8 +7,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,10 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -30,12 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -48,7 +39,7 @@ import coil.compose.AsyncImage
 import id.my.karyatra.audit.data.*
 import id.my.karyatra.audit.data.viewmodel.AuditHasilViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
-import id.my.karyatra.audit.component.verticalScrollbar
+import id.my.karyatra.audit.component.UiUtils
 import id.my.karyatra.audit.component.verticalScrollbar
 import java.text.SimpleDateFormat
 import java.util.*
@@ -112,16 +103,9 @@ fun AuditHasilScreen(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    val brandColor = Color(0xFFB63352)
-                    Text(
-                        text = "Pilih Departemen & Periode",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = brandColor,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
                     // Department Selector
                     var expanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
@@ -133,123 +117,36 @@ fun AuditHasilScreen(
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Departemen") },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.auditdept),
-                                    contentDescription = null,
-                                    tint = brandColor,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                             modifier = Modifier.fillMaxWidth().menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = brandColor,
-                                focusedLabelColor = brandColor,
-                                unfocusedLabelColor = Color.Gray,
-                                unfocusedBorderColor = Color.LightGray,
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
-                            )
+                            shape = RoundedCornerShape(12.dp)
                         )
-                        ExposedDropdownMenu(
-                            expanded = expanded, 
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.background(Color.White)
-                        ) {
-                            val scrollState = rememberScrollState()
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(max = 250.dp)
-                                    .verticalScrollbar(scrollState)
-                                    .verticalScroll(scrollState)
-                            ) {
-                                uiState.departments.forEach { dept ->
-                                    DropdownMenuItem(
-                                        text = { 
-                                            Text(
-                                                text = dept.name,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                modifier = Modifier.padding(vertical = 4.dp)
-                                            )
-                                        },
-                                        onClick = {
-                                            viewModel.selectDepartment(dept)
-                                            expanded = false
-                                        }
-                                    )
-                                }
+                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            uiState.departments.forEach { dept ->
+                                DropdownMenuItem(
+                                    text = { Text(dept.name) },
+                                    onClick = {
+                                        viewModel.selectDepartment(dept)
+                                        expanded = false
+                                    }
+                                )
                             }
                         }
                     }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                            .background(Color.White, RoundedCornerShape(12.dp)),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Date From
-                        Row(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable {
-                                    showDatePicker(context, uiState.dateFrom) { viewModel.updateDates(it, uiState.dateTo) }
-                                },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = formatDateIndo(uiState.dateFrom),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.DarkGray
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(
-                                imageVector = Icons.Default.CalendarToday,
-                                contentDescription = null,
-                                tint = primaryColor.copy(alpha = 0.6f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
-                        // Vertical Divider
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight(0.6f)
-                                .width(1.dp)
-                                .background(Color.LightGray.copy(alpha = 0.5f))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        DatePickerField(
+                            label = "Dari Tanggal",
+                            value = uiState.dateFrom,
+                            modifier = Modifier.weight(1f),
+                            onDateSelected = { viewModel.updateDates(it, uiState.dateTo) }
                         )
-
-                        // Date To
-                        Row(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable {
-                                    showDatePicker(context, uiState.dateTo) { viewModel.updateDates(uiState.dateFrom, it) }
-                                },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = formatDateIndo(uiState.dateTo),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.DarkGray
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(
-                                imageVector = Icons.Default.CalendarToday,
-                                contentDescription = null,
-                                tint = primaryColor.copy(alpha = 0.6f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
+                        DatePickerField(
+                            label = "Sampai Tanggal",
+                            value = uiState.dateTo,
+                            modifier = Modifier.weight(1f),
+                            onDateSelected = { viewModel.updateDates(uiState.dateFrom, it) }
+                        )
                     }
                 }
             }
@@ -321,29 +218,7 @@ fun AuditDocumentItem(
     onDelete: () -> Unit
 ) {
     val formattedDate = remember(audit.createdAt) {
-        try {
-            if (audit.createdAt == null) "-"
-            else {
-                // Handle ISO 8601 format from backend (e.g. 2026-07-29T13:29:20.000000Z)
-                val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                isoFormat.timeZone = TimeZone.getTimeZone("UTC")
-                val date = isoFormat.parse(audit.createdAt)
-                if (date != null) {
-                    val displayFormat = SimpleDateFormat("yyyy-MM-dd | HH:mm", Locale.getDefault())
-                    displayFormat.timeZone = TimeZone.getTimeZone("UTC")
-                    displayFormat.format(date)
-                } else "-"
-            }
-        } catch (_: Exception) {
-            val raw = audit.createdAt ?: return@remember "-"
-            if (raw.contains("T")) {
-                val datePart = raw.substringBefore("T")
-                val timePart = raw.substringAfter("T").take(5)
-                "$datePart | $timePart"
-            } else {
-                raw.take(16).replace(" ", " | ")
-            }
-        }
+        UiUtils.formatDateIndo(audit.createdAt ?: "")
     }
 
     Card(
@@ -353,7 +228,7 @@ fun AuditDocumentItem(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Row(
             modifier = Modifier
@@ -427,43 +302,33 @@ fun AuditDocumentItem(
     }
 }
 
-fun formatDateIndo(dateStr: String): String {
-    if (dateStr.isEmpty()) return "-"
-    return try {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-        val date = inputFormat.parse(dateStr)
-        if (date != null) outputFormat.format(date) else dateStr
-    } catch (e: Exception) {
-        dateStr
-    }
-}
-
-fun showDatePicker(
-    context: android.content.Context,
-    currentValue: String,
+@Composable
+fun DatePickerField(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
     onDateSelected: (String) -> Unit
 ) {
-    val calendar = Calendar.getInstance()
-    if (currentValue.isNotEmpty()) {
-        try {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            sdf.parse(currentValue)?.let { calendar.time = it }
-        } catch (_: Exception) {}
-    }
-
-    DatePickerDialog(
-        context,
-        { _, y, m, d ->
-            val cal = Calendar.getInstance()
-            cal.set(y, m, d)
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            onDateSelected(sdf.format(cal.time))
+    val context = LocalContext.current
+    
+    OutlinedTextField(
+        value = value,
+        onValueChange = {},
+        readOnly = true,
+        label = { Text(label) },
+        trailingIcon = { Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(18.dp)) },
+        modifier = modifier.clickable {
+            UiUtils.showDatePicker(context, value, onDateSelected)
         },
-        calendar.get(Calendar.YEAR),
-        calendar.get(Calendar.MONTH),
-        calendar.get(Calendar.DAY_OF_MONTH)
-    ).show()
+        enabled = false, // Disable typing, only clickable via modifier
+        colors = OutlinedTextFieldDefaults.colors(
+            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+            disabledBorderColor = MaterialTheme.colorScheme.outline,
+            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        shape = RoundedCornerShape(12.dp)
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -690,7 +555,7 @@ fun ResultQuestionCard(question: AuditQuestionDetail, index: Int) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFFF8F9FB), RoundedCornerShape(8.dp))
-                        .border(1.dp, Color(0xFFB63352).copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
                         .padding(10.dp)
                 ) {
                     Icon(Icons.Default.Description, null, modifier = Modifier.size(14.dp), tint = Color.Gray)

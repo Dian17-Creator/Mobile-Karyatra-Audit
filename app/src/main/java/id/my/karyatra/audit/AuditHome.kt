@@ -62,6 +62,7 @@ fun MainContainer(
 
     val headerTitle = when (currentRoute) {
         Screen.Home.route -> "Audit Karyatra"
+        Screen.Stock.route -> "Stok Opname"
         Screen.Profile.route -> "Profil Pengguna"
         else -> "Audit Karyatra"
     }

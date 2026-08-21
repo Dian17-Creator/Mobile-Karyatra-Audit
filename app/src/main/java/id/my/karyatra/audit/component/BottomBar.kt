@@ -15,6 +15,7 @@ import id.my.karyatra.audit.navigation.Screen
 fun BottomBar(navController: NavHostController) {
     val screens = listOf(
         Screen.Home,
+        Screen.Stock,
         Screen.Profile
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
