@@ -16,6 +16,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,6 +57,8 @@ import coil.compose.AsyncImage
 import id.my.karyatra.audit.data.*
 import id.my.karyatra.audit.data.viewmodel.AuditExecutionViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
+import id.my.karyatra.audit.component.verticalScrollbar
+import id.my.karyatra.audit.component.verticalScrollbar
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -102,7 +105,7 @@ fun AuditExecutionScreen(
     }
 
     val primaryColor = Color(0xFFB63352)
-    val backColor = Color(0xFFF8F9FB)
+    val backColor = MaterialTheme.colorScheme.background
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
@@ -212,6 +215,7 @@ fun StartAuditSection(
     onStart: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val brandColor = Color(0xFFB63352)
 
     Column(
         modifier = Modifier
@@ -249,23 +253,55 @@ fun StartAuditSection(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Departemen") },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.auditdept),
+                            contentDescription = null,
+                            tint = brandColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = brandColor,
+                        focusedLabelColor = brandColor,
+                        unfocusedLabelColor = Color.Gray,
+                        unfocusedBorderColor = Color.LightGray,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
                 )
 
                 ExposedDropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.background(Color.White)
                 ) {
-                    departments.forEach { department ->
-                        DropdownMenuItem(
-                            text = { Text(department.name) },
-                            onClick = {
-                                onSelect(department)
-                                expanded = false
-                            }
-                        )
+                    val scrollState = rememberScrollState()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 250.dp)
+                            .verticalScrollbar(scrollState)
+                            .verticalScroll(scrollState)
+                    ) {
+                        departments.forEach { department ->
+                            DropdownMenuItem(
+                                text = { 
+                                    Text(
+                                        text = department.name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                },
+                                onClick = {
+                                    onSelect(department)
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -313,10 +349,12 @@ fun AuditExecutionContent(
                 .blur(if (isAnyDialogOpen || selectedPhoto != null || showSubmitDialog) 16.dp else 0.dp)
         ) {
             // Audit Header
-            ElevatedCard(
+            Card(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -445,7 +483,7 @@ fun StatusChip(status: String, isSolid: Boolean = false) {
     Surface(
         color = if (isSolid) color else color.copy(alpha = 0.1f),
         shape = RoundedCornerShape(8.dp),
-        border = if (isSolid) null else androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.5f))
+        border = if (isSolid) null else BorderStroke(1.dp, color.copy(alpha = 0.5f))
     ) {
         Text(
             text = status,
@@ -585,7 +623,7 @@ fun QuestionExecutionCard(
             containerColor = if (isHighlighted) Color(0xFFFFF9C4) else Color.White
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier

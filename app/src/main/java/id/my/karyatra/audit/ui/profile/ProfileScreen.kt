@@ -1,5 +1,7 @@
 package id.my.karyatra.audit.ui.profile
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,11 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import id.my.karyatra.audit.R
 import id.my.karyatra.audit.data.SessionManager
 
 @Composable
@@ -33,7 +39,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
     val user = sessionManager.getUser()
     
     val primaryColor = Color(0xFFB63352)
-    val backgroundColor = Color(0xFFF8F9FB)
+    val backgroundColor = MaterialTheme.colorScheme.background
 
     Column(
         modifier = Modifier
@@ -54,11 +60,10 @@ fun ProfileScreen(onLogout: () -> Unit) {
                 .background(primaryColor.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
+            Image(
+                painter = painterResource(id = R.drawable.profile2),
                 contentDescription = "Avatar",
-                modifier = Modifier.size(80.dp),
-                tint = primaryColor
+                modifier = Modifier.size(60.dp)
             )
         }
 
@@ -82,7 +87,8 @@ fun ProfileScreen(onLogout: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.2f))
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -95,25 +101,25 @@ fun ProfileScreen(onLogout: () -> Unit) {
                 )
                 
                 ProfileInfoRow(
-                    icon = Icons.Default.Person,
+                    painter = painterResource(id = R.drawable.profile2),
                     label = "Nama Lengkap",
                     value = user?.name ?: "-"
                 )
                 
                 ProfileInfoRow(
-                    icon = Icons.Default.Email,
+                    painter = rememberVectorPainter(Icons.Default.Email),
                     label = "Email",
                     value = user?.email ?: "-"
                 )
 
                 ProfileInfoRow(
-                    icon = Icons.Default.Business,
+                    painter = painterResource(id = R.drawable.auditdept),
                     label = "Departemen",
                     value = user?.department_name ?: "-"
                 )
                 
                 ProfileInfoRow(
-                    icon = Icons.Default.LocationCity,
+                    painter = rememberVectorPainter(Icons.Default.LocationCity),
                     label = "Perusahaan",
                     value = user?.company ?: "-"
                 )
@@ -147,24 +153,30 @@ fun ProfileScreen(onLogout: () -> Unit) {
 }
 
 @Composable
-fun ProfileInfoRow(icon: ImageVector, label: String, value: String) {
+fun ProfileInfoRow(
+    painter: Painter,
+    label: String,
+    value: String
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
+        Image(
+            painter = painter,
             contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = Color.Gray
+            modifier = Modifier.size(20.dp)
         )
+
         Spacer(modifier = Modifier.width(16.dp))
+
         Column {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )
+
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
