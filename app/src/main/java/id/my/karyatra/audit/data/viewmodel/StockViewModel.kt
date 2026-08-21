@@ -47,11 +47,6 @@ class StockViewModel(application: Application) : AndroidViewModel(application) {
 
     fun fetchDashboardSummary() {
         viewModelScope.launch {
-            // Only show loading if we don't have data yet
-            if (_uiState.value.totalKategoriStok == "0") {
-                _uiState.update { it.copy(isLoading = true) }
-            }
-            
             dashboardRepository.getDashboardSummary().collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
