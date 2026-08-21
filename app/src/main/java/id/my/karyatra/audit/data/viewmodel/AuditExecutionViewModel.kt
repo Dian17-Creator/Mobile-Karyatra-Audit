@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import id.my.karyatra.audit.data.*
 import id.my.karyatra.audit.data.repository.AuditDepartmentRepository
 import id.my.karyatra.audit.data.repository.AuditExecutionRepository
+import id.my.karyatra.audit.data.repository.DashboardRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,7 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
 
     private val executionRepository: AuditExecutionRepository = AuditExecutionRepository()
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
+    private val dashboardRepository: DashboardRepository = DashboardRepository(application)
 
     private val _uiState = MutableStateFlow(AuditExecutionUiState())
     val uiState: StateFlow<AuditExecutionUiState> = _uiState.asStateFlow()
@@ -102,6 +104,7 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
                 is ApiResult.Success -> {
                     val auditId = result.data.data?.id
                     if (auditId != null) {
+                        dashboardRepository.invalidateCache()
                         fetchAuditDetail(auditId)
                     } else {
                         _uiState.update { it.copy(isLoading = false, errorMessage = "Audit ID tidak ditemukan") }
@@ -241,6 +244,7 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
             when (val result = executionRepository.submitAudit(auditId, auditeeName, verificationPhoto)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
+                        dashboardRepository.invalidateCache()
                         _uiState.update { it.copy(isSubmitting = false, successMessage = result.data.message) }
                         fetchAuditDetail(auditId)
                     } else {

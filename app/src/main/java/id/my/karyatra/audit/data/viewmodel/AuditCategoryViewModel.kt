@@ -1,11 +1,13 @@
 package id.my.karyatra.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.karyatra.audit.data.ApiResult
 import id.my.karyatra.audit.data.CategoryData
 import id.my.karyatra.audit.data.CategoryRequest
 import id.my.karyatra.audit.data.repository.AuditCategoryRepository
+import id.my.karyatra.audit.data.repository.DashboardRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,9 +25,10 @@ data class AuditCategoryUiState(
     val successMessage: String? = null
 )
 
-class AuditCategoryViewModel(
+class AuditCategoryViewModel(application: Application) : AndroidViewModel(application) {
+
     private val repository: AuditCategoryRepository = AuditCategoryRepository()
-) : ViewModel() {
+    private val dashboardRepository: DashboardRepository = DashboardRepository(application)
 
     private val _uiState = MutableStateFlow(AuditCategoryUiState())
     val uiState: StateFlow<AuditCategoryUiState> = _uiState.asStateFlow()
@@ -75,6 +78,7 @@ class AuditCategoryViewModel(
             when (val result = repository.createCategory(request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
+                        dashboardRepository.invalidateCache()
                         _uiState.update { it.copy(isLoading = false, isAddDialogOpen = false, successMessage = result.data.message) }
                         fetchCategories()
                     } else {
@@ -95,6 +99,7 @@ class AuditCategoryViewModel(
             when (val result = repository.updateCategory(id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
+                        dashboardRepository.invalidateCache()
                         _uiState.update { it.copy(isLoading = false, isEditDialogOpen = false, successMessage = result.data.message) }
                         fetchCategories()
                     } else {
@@ -114,6 +119,7 @@ class AuditCategoryViewModel(
             when (val result = repository.deleteCategory(id)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
+                        dashboardRepository.invalidateCache()
                         _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }
                         fetchCategories()
                     } else {

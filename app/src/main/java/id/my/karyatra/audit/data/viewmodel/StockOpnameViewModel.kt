@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.karyatra.audit.data.*
 import id.my.karyatra.audit.data.repository.AuditDepartmentRepository
+import id.my.karyatra.audit.data.repository.DashboardRepository
 import id.my.karyatra.audit.data.repository.StockOpnameRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -34,6 +35,7 @@ class StockOpnameViewModel(application: Application) : AndroidViewModel(applicat
 
     private val opnameRepository: StockOpnameRepository = StockOpnameRepository(application)
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
+    private val dashboardRepository: DashboardRepository = DashboardRepository(application)
 
     private val _uiState = MutableStateFlow(StockOpnameUiState())
     val uiState: StateFlow<StockOpnameUiState> = _uiState.asStateFlow()
@@ -75,6 +77,7 @@ class StockOpnameViewModel(application: Application) : AndroidViewModel(applicat
                 is ApiResult.Success -> {
                     val id = result.data.data?.id
                     if (id != null) {
+                        dashboardRepository.invalidateCache()
                         fetchDetail(id, auditorId)
                     } else {
                         _uiState.update { it.copy(isLoading = false, errorMessage = "ID tidak ditemukan") }
@@ -249,6 +252,7 @@ class StockOpnameViewModel(application: Application) : AndroidViewModel(applicat
             when (val result = opnameRepository.submitStockOpname(auditId, auditeeName, verificationPhoto)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
+                        dashboardRepository.invalidateCache()
                         _uiState.update { it.copy(isSubmitting = false, successMessage = result.data.message) }
                         fetchDetail(auditId, auditorId)
                     } else {

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.karyatra.audit.data.*
+import id.my.karyatra.audit.data.repository.DashboardRepository
 import id.my.karyatra.audit.data.repository.StockRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,7 @@ data class StockItemUiState(
 class StockItemViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: StockRepository = StockRepository(application)
+    private val dashboardRepository: DashboardRepository = DashboardRepository(application)
 
     private val _uiState = MutableStateFlow(StockItemUiState())
     val uiState: StateFlow<StockItemUiState> = _uiState.asStateFlow()
@@ -87,6 +89,7 @@ class StockItemViewModel(application: Application) : AndroidViewModel(applicatio
             when (val result = repository.createItem(request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
+                        dashboardRepository.invalidateCache()
                         _uiState.update { it.copy(isLoading = false, isAddDialogOpen = false, successMessage = result.data.message) }
                         fetchItems(categoryId)
                     } else {
@@ -106,6 +109,7 @@ class StockItemViewModel(application: Application) : AndroidViewModel(applicatio
             when (val result = repository.deleteItem(categoryId, id)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
+                        dashboardRepository.invalidateCache()
                         _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }
                         fetchItems(categoryId)
                     } else {
@@ -143,6 +147,7 @@ class StockItemViewModel(application: Application) : AndroidViewModel(applicatio
             when (val result = repository.reorderItems(request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
+                        dashboardRepository.invalidateCache()
                         _uiState.update { it.copy(isLoading = false, successMessage = result.data.message) }
                         fetchItems(categoryId)
                     } else {
