@@ -101,13 +101,13 @@ fun ProfileScreen(onLogout: () -> Unit) {
                 )
                 
                 ProfileInfoRow(
-                    painter = painterResource(id = R.drawable.profile2),
+                    painter = painterResource(id = R.drawable.ic_profile3),
                     label = "Nama Lengkap",
                     value = user?.name ?: "-"
                 )
                 
                 ProfileInfoRow(
-                    painter = rememberVectorPainter(Icons.Default.Email),
+                    painter = painterResource(id = R.drawable.ic_mail),
                     label = "Email",
                     value = user?.email ?: "-"
                 )
@@ -119,7 +119,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
                 )
                 
                 ProfileInfoRow(
-                    painter = rememberVectorPainter(Icons.Default.LocationCity),
+                    painter = painterResource(id = R.drawable.ic_company),
                     label = "Perusahaan",
                     value = user?.company ?: "-"
                 )
