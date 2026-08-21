@@ -4,8 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -14,7 +12,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -50,18 +47,17 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import id.my.karyatra.audit.data.*
+import id.my.karyatra.audit.data.FileHelper
+import id.my.karyatra.audit.data.viewmodel.AuditExecutionUiState
 import id.my.karyatra.audit.data.viewmodel.AuditExecutionViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
 import id.my.karyatra.audit.component.verticalScrollbar
-import id.my.karyatra.audit.component.verticalScrollbar
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileOutputStream
 
 class AuditProses : ComponentActivity() {
 
@@ -215,7 +211,6 @@ fun StartAuditSection(
     onStart: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val brandColor = Color(0xFFB63352)
 
     Column(
         modifier = Modifier
@@ -253,55 +248,23 @@ fun StartAuditSection(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Departemen") },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.auditdept),
-                            contentDescription = null,
-                            tint = brandColor,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = brandColor,
-                        focusedLabelColor = brandColor,
-                        unfocusedLabelColor = Color.Gray,
-                        unfocusedBorderColor = Color.LightGray,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
+                    shape = RoundedCornerShape(12.dp)
                 )
 
                 ExposedDropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    modifier = Modifier.background(Color.White)
+                    onDismissRequest = { expanded = false }
                 ) {
-                    val scrollState = rememberScrollState()
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 250.dp)
-                            .verticalScrollbar(scrollState)
-                            .verticalScroll(scrollState)
-                    ) {
-                        departments.forEach { department ->
-                            DropdownMenuItem(
-                                text = { 
-                                    Text(
-                                        text = department.name,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.padding(vertical = 4.dp)
-                                    )
-                                },
-                                onClick = {
-                                    onSelect(department)
-                                    expanded = false
-                                }
-                            )
-                        }
+                    departments.forEach { department ->
+                        DropdownMenuItem(
+                            text = { Text(department.name) },
+                            onClick = {
+                                onSelect(department)
+                                expanded = false
+                            }
+                        )
                     }
                 }
             }
@@ -330,7 +293,7 @@ fun StartAuditSection(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AuditExecutionContent(
-    uiState: id.my.karyatra.audit.data.viewmodel.AuditExecutionUiState,
+    uiState: AuditExecutionUiState,
     listState: androidx.compose.foundation.lazy.LazyListState,
     viewModel: AuditExecutionViewModel
 ) {
@@ -553,7 +516,7 @@ fun QuestionExecutionCard(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            val file = uriToFile(context, it)
+            val file = FileHelper.uriToFile(context, it)
             if (file != null) onUploadPhoto(file)
         }
     }
@@ -563,7 +526,7 @@ fun QuestionExecutionCard(
     ) { success ->
         if (success) {
             cameraImageUri?.let { uri ->
-                val file = uriToFile(context, uri)
+                val file = FileHelper.uriToFile(context, uri)
                 if (file != null) onUploadPhoto(file)
             }
         }
@@ -900,7 +863,7 @@ fun SubmitAuditDialog(
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { photoFile = uriToFile(context, it) }
+        uri?.let { photoFile = FileHelper.uriToFile(context, it) }
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -908,7 +871,7 @@ fun SubmitAuditDialog(
     ) { success ->
         if (success) {
             cameraUri?.let { uri ->
-                photoFile = uriToFile(context, uri)
+                photoFile = FileHelper.uriToFile(context, uri)
             }
         }
     }
@@ -1042,7 +1005,7 @@ fun SubmitAuditDialog(
                             .clickable { showSourceDialog = true },
                         shape = RoundedCornerShape(16.dp),
                         color = brandColor.copy(alpha = 0.05f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, brandColor.copy(alpha = 0.2f))
+                        border = BorderStroke(1.dp, brandColor.copy(alpha = 0.2f))
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -1072,7 +1035,7 @@ fun SubmitAuditDialog(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f).height(52.dp),
                         shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
+                        border = BorderStroke(1.dp, Color.LightGray)
                     ) {
                         Text("Batal", color = Color.Gray)
                     }
@@ -1098,48 +1061,4 @@ fun SubmitAuditDialog(
             }
         }
     }
-}
-
-// Utility to convert Uri to File, fix orientation, and compress
-fun uriToFile(context: Context, uri: Uri): File? {
-    return try {
-        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
-        
-        // Read Exif orientation
-        val exifInputStream = context.contentResolver.openInputStream(uri)
-        val orientation = exifInputStream?.use {
-            val exif = ExifInterface(it)
-            exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-        } ?: ExifInterface.ORIENTATION_NORMAL
-
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-        inputStream.close()
-
-        // Rotate bitmap if needed
-        val rotatedBitmap = when (orientation) {
-            ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(bitmap, 90f)
-            ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(bitmap, 180f)
-            ExifInterface.ORIENTATION_ROTATE_270 -> rotateImage(bitmap, 270f)
-            else -> bitmap
-        }
-
-        val file = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
-        val outputStream = FileOutputStream(file)
-        rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
-        outputStream.flush()
-        outputStream.close()
-        
-        if (rotatedBitmap != bitmap) bitmap.recycle()
-        
-        file
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
-private fun rotateImage(source: Bitmap, angle: Float): Bitmap {
-    val matrix = android.graphics.Matrix()
-    matrix.postRotate(angle)
-    return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
 }
