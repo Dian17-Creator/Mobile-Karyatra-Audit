@@ -177,7 +177,12 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
         val container = _uiState.value.auditDetail ?: return
         val auditId = container.audit.id
         val answers = container.categories.flatMap { it.questions }.map {
-            AuditAnswer(it.id, it.response?.score, it.response?.remark)
+            AuditAnswer(
+                questionId = it.id,
+                score = it.response?.score,
+                isNa = it.response?.isNa ?: false,
+                remark = it.response?.remark
+            )
         }
 
         _uiState.update { it.copy(isSaving = true) }

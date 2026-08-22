@@ -32,20 +32,16 @@ class DashboardRepository(context: Context) {
                         cache.save(CACHE_KEY_DASHBOARD, body)
                         emit(ApiResult.Success(body))
                     }
-                } else if (cached == null) {
+                } else {
                     emit(ApiResult.Error("Data tidak ditemukan"))
                 }
-            } else if (cached == null) {
+            } else {
                 emit(ApiResult.Error(ApiErrorParser.parseError(response.errorBody())))
             }
         } catch (e: IOException) {
-            if (cached == null) {
-                emit(ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}"))
-            }
+            emit(ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}"))
         } catch (e: Exception) {
-            if (cached == null) {
-                emit(ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}"))
-            }
+            emit(ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}"))
         }
     }
 
