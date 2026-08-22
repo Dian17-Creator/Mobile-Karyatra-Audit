@@ -33,30 +33,49 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             repository.getDashboardSummary().collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
-                        val data = result.data.data
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false,
-                                totalKategori = data?.totalKategori?.toString() ?: "0",
-                                totalPertanyaan = data?.totalPertanyaan?.toString() ?: "0",
-                                totalAudit = data?.totalAudit?.toString() ?: "0",
-                                recentActivities = data?.recentActivity ?: emptyList()
-                            )
+                        val response = result.data
+                        if (response.success) {
+                            val data = response.data
+                            _uiState.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    totalKategori = data?.totalKategori?.toString() ?: "0",
+                                    totalPertanyaan = data?.totalPertanyaan?.toString() ?: "0",
+                                    totalAudit = data?.totalAudit?.toString() ?: "0",
+                                    recentActivities = data?.recentActivity ?: emptyList()
+                                )
+                            }
+                        } else {
+                            android.util.Log.e("HomeViewModel", "API Error: ${response.message}")
+                            _uiState.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    error = response.message,
+                                    totalKategori = if (it.totalKategori == "--") "0" else it.totalKategori,
+                                    totalPertanyaan = if (it.totalPertanyaan == "--") "0" else it.totalPertanyaan,
+                                    totalAudit = if (it.totalAudit == "--") "0" else it.totalAudit
+                                )
+                            }
                         }
                     }
                     is ApiResult.Error -> {
+                        android.util.Log.e("HomeViewModel", "Error fetching dashboard: ${result.message}")
                         _uiState.update { 
                             it.copy(
                                 isLoading = false, 
                                 error = result.message,
-                                totalKategori = if (it.totalKategori == "--") "-" else it.totalKategori,
-                                totalPertanyaan = if (it.totalPertanyaan == "--") "-" else it.totalPertanyaan,
-                                totalAudit = if (it.totalAudit == "--") "-" else it.totalAudit
+                                totalKategori = if (it.totalKategori == "--") "0" else it.totalKategori,
+                                totalPertanyaan = if (it.totalPertanyaan == "--") "0" else it.totalPertanyaan,
+                                totalAudit = if (it.totalAudit == "--") "0" else it.totalAudit
                             ) 
                         }
                     }
                 }
             }
         }
+    }
+
+    fun clearMessages() {
+        _uiState.update { it.copy(error = null) }
     }
 }

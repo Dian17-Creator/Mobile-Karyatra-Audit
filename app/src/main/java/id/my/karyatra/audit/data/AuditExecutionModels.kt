@@ -79,7 +79,8 @@ data class AuditDetailResponse(
 data class AuditAnswer(
     @SerializedName("question_id") val questionId: Int,
     @SerializedName("score") val score: String?,
-    @SerializedName("remark") val notes: String?
+    @SerializedName("is_na") val isNa: Boolean = false,
+    @SerializedName("remark") val remark: String?
 )
 
 data class AuditUpdateRequest(
@@ -111,8 +112,14 @@ data class IncompleteQuestion(
     @SerializedName("question") val question: String
 )
 
+data class AuditSubmitData(
+    @SerializedName("final_score") val finalScore: Double,
+    @SerializedName("percentage") val percentage: Double
+)
+
 data class AuditSubmitResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
+    @SerializedName("data") val data: AuditSubmitData? = null,
     @SerializedName("incomplete_questions") val incompleteQuestions: List<IncompleteQuestion>? = null
 )

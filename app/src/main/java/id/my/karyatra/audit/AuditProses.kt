@@ -692,13 +692,20 @@ fun QuestionExecutionCard(
                     question.photos.forEach { photo ->
                         AsyncImage(
                             model = photo.photoPath,
-                            contentDescription = null,
+                            contentDescription = "Foto Temuan",
                             modifier = Modifier
                                 .size(53.5.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color.LightGray)
                                 .clickable { onPhotoClick(photo) },
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.Crop,
+                            onError = { 
+                                val url = photo.photoPath ?: "NULL"
+                                val isHttps = url.startsWith("https")
+                                android.util.Log.e("AuditProses", "Gagal memuat gambar: $url")
+                                android.util.Log.e("AuditProses", "Is HTTPS: $isHttps")
+                                android.util.Log.e("AuditProses", "Error: ${it.result.throwable.message}")
+                            }
                         )
                     }
                 }
@@ -798,12 +805,16 @@ fun PhotoDetailDialog(
                 
                 AsyncImage(
                     model = photo.photoPath,
-                    contentDescription = null,
+                    contentDescription = "Detail Foto",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(300.dp)
-                        .clip(RoundedCornerShape(12.dp)),
-                    contentScale = ContentScale.Fit
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.LightGray),
+                    contentScale = ContentScale.Fit,
+                    onError = { 
+                        android.util.Log.e("AuditProses", "Gagal memuat detail gambar: ${photo.photoPath}")
+                    }
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))

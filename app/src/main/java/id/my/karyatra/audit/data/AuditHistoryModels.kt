@@ -8,6 +8,7 @@ data class AuditHistoryItem(
     @SerializedName("nid_dept") val departmentId: Int?,
     @SerializedName("department_name") val departmentName: String?,
     @SerializedName("cstatus") val status: String?,
+    @SerializedName("daudit") val auditDate: String?,
     @SerializedName("created_at") val createdAt: String?
 )
 
