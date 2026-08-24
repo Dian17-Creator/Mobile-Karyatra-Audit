@@ -35,7 +35,7 @@ data class AuditResponseDetail(
 
 data class AuditQuestionDetail(
     @SerializedName("id") val id: Int,
-    @SerializedName("question") val question: String,
+    @SerializedName("question") val question: String?,
     @SerializedName("sequence") val sequence: Int,
     @SerializedName("response") val response: AuditResponseDetail?,
     @SerializedName("photos") val photos: List<AuditPhotoDetail> = emptyList()
@@ -43,7 +43,7 @@ data class AuditQuestionDetail(
 
 data class AuditCategoryDetail(
     @SerializedName("id") val id: Int,
-    @SerializedName("name") val name: String,
+    @SerializedName("name") val name: String?,
     @SerializedName("total_score") val totalScore: Double,
     @SerializedName("max_score") val maxScore: Double,
     @SerializedName("percentage") val percentage: Double,
@@ -52,11 +52,11 @@ data class AuditCategoryDetail(
 
 data class AuditInfo(
     @SerializedName("id") val id: Int,
-    @SerializedName("document_id") val documentId: String,
-    @SerializedName("status") val status: String,
+    @SerializedName("document_id") val documentId: String?,
+    @SerializedName("status") val status: String?,
     @SerializedName("audit_date") val auditDate: String?,
-    @SerializedName("department_name") val departmentName: String,
-    @SerializedName("auditor_name") val auditorName: String,
+    @SerializedName("department_name") val departmentName: String?,
+    @SerializedName("auditor_name") val auditorName: String?,
     @SerializedName("total_score") val totalScore: Double,
     @SerializedName("max_score") val maxScore: Double,
     @SerializedName("percentage") val percentage: Double,
@@ -109,7 +109,7 @@ data class GenericIdRequest(
 
 data class IncompleteQuestion(
     @SerializedName("id") val id: Int,
-    @SerializedName("question") val question: String
+    @SerializedName("question") val question: String?
 )
 
 data class AuditSubmitData(

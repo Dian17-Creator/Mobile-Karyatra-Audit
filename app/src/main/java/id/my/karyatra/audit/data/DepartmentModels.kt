@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class DepartmentData(
     @SerializedName("id") val id: Int,
-    @SerializedName("name") val name: String
+    @SerializedName("name") val name: String?
 )
 
 data class DepartmentListResponse(
@@ -15,13 +15,13 @@ data class DepartmentListResponse(
 
 data class MappingQuestion(
     @SerializedName("id") val id: Int,
-    @SerializedName("question") val question: String,
+    @SerializedName("question") val question: String?,
     @SerializedName("linked") val linked: Boolean
 )
 
 data class MappingCategory(
     @SerializedName("id") val id: Int,
-    @SerializedName("name") val name: String,
+    @SerializedName("name") val name: String?,
     @SerializedName("questions") val questions: List<MappingQuestion>
 )
 

@@ -339,7 +339,7 @@ fun CategoryCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = category.name,
+                    text = category.name ?: "",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color(0xFFB63352)
                 )

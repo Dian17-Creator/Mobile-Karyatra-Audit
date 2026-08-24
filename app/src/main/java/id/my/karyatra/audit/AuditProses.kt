@@ -259,7 +259,7 @@ fun StartAuditSection(
                 ) {
                     departments.forEach { department ->
                         DropdownMenuItem(
-                            text = { Text(department.name) },
+                            text = { Text(department.name ?: "") },
                             onClick = {
                                 onSelect(department)
                                 expanded = false
@@ -323,19 +323,19 @@ fun AuditExecutionContent(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
                             Text(text = "Departemen", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text(text = audit.departmentName, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
+                            Text(text = audit.departmentName ?: "", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                         }
-                        StatusChip(status = audit.status, isSolid = true)
+                        StatusChip(status = audit.status ?: "Draft", isSolid = true)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "Auditor", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text(text = audit.auditorName, style = MaterialTheme.typography.bodyMedium)
+                            Text(text = audit.auditorName ?: "", style = MaterialTheme.typography.bodyMedium)
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "No. Dokumen", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text(text = audit.documentId, style = MaterialTheme.typography.bodyMedium)
+                            Text(text = audit.documentId ?: "", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                     
@@ -475,7 +475,7 @@ fun CategoryHeader(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = category.name,
+                text = category.name ?: "",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color(0xFFB63352)
             )
@@ -618,7 +618,7 @@ fun QuestionExecutionCard(
             ) {
                 // Question Text
                 Text(
-                    text = question.question,
+                    text = question.question ?: "",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Normal,

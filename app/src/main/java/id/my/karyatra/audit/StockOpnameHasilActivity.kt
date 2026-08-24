@@ -167,7 +167,7 @@ fun StockOpnameHasilScreen(
                                     DropdownMenuItem(
                                         text = { 
                                             Text(
-                                                text = dept.name,
+                                                text = dept.name ?: "",
                                                 style = MaterialTheme.typography.bodyLarge,
                                                 modifier = Modifier.padding(vertical = 4.dp)
                                             )

@@ -285,7 +285,7 @@ fun StartOpnameSection(
                             DropdownMenuItem(
                                 text = { 
                                     Text(
-                                        text = department.name,
+                                        text = department.name ?: "",
                                         style = MaterialTheme.typography.bodyLarge,
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
