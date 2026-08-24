@@ -33,6 +33,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.my.karyatra.audit.*
 import id.my.karyatra.audit.R
+import android.widget.Toast
+import id.my.karyatra.audit.data.SessionManager
 import id.my.karyatra.audit.data.RecentActivityData
 import id.my.karyatra.audit.data.viewmodel.HomeViewModel
 
@@ -48,6 +50,8 @@ fun AuditHomeScreen(
 ) {
     val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
+    val sessionManager = remember { SessionManager(context) }
+    val userId = remember { sessionManager.getUser()?.id ?: -1 }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -63,10 +67,22 @@ fun AuditHomeScreen(
         }
     }
 
+    LaunchedEffect(uiState.resendMessage) {
+        uiState.resendMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearMessages()
+        }
+    }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.fetchDashboardSummary()
+                if (userId != -1) {
+                    viewModel.startVerificationCheck(userId)
+                }
+            } else if (event == Lifecycle.Event.ON_PAUSE) {
+                viewModel.stopVerificationCheck()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -90,6 +106,15 @@ fun AuditHomeScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
+        uiState.currentUser?.let { user ->
+            if (user.is_email_verified == false) {
+                VerificationBanner(
+                    isResending = uiState.isResending,
+                    onResend = { viewModel.resendVerification() }
+                )
+            }
+        }
+
         WelcomeCard(username = username)
 
         SummaryStatsSection(
@@ -435,6 +460,43 @@ fun ActivityItem(title: String, subtitle: String, status: String, statusColor: C
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = statusColor
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun VerificationBanner(
+    isResending: Boolean,
+    onResend: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFFFFF3E0),
+        border = BorderStroke(1.dp, Color(0xFFFFB74D)),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(Icons.Default.Info, null, tint = Color(0xFFE65100))
+            Text(
+                text = "Email belum diverifikasi. Silakan cek inbox Anda.",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFE65100)
+            )
+            TextButton(
+                onClick = onResend,
+                enabled = !isResending
+            ) {
+                if (isResending) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color(0xFFE65100))
+                } else {
+                    Text("Kirim Ulang", fontWeight = FontWeight.Bold, color = Color(0xFFE65100))
+                }
             }
         }
     }

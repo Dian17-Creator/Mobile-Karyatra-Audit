@@ -7,5 +7,9 @@ data class UserData(
     val company: String?,
     val department_id: Int?,
     val department_name: String?,
-    val role: UserRole
+    val role: UserRole,
+    val is_owner: Boolean?,
+    val is_email_verified: Boolean?,
+    val is_trial: Boolean?,
+    val demailverified: String?
 )

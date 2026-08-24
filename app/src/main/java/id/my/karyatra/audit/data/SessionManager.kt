@@ -19,6 +19,10 @@ class SessionManager(context: Context) {
         private const val KEY_SUPER_ADMIN = "super_admin"
         private const val KEY_HRD = "hrd"
         private const val KEY_AUDIT = "audit"
+        private const val KEY_IS_OWNER = "is_owner"
+        private const val KEY_IS_EMAIL_VERIFIED = "is_email_verified"
+        private const val KEY_IS_TRIAL = "is_trial"
+        private const val KEY_EMAIL_VERIFIED_DATE = "email_verified_date"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
         private const val KEY_REMEMBER_ME = "remember_me"
     }
@@ -35,6 +39,10 @@ class SessionManager(context: Context) {
             putBoolean(KEY_SUPER_ADMIN, user.role.superAdmin)
             putBoolean(KEY_HRD, user.role.hrd)
             putBoolean(KEY_AUDIT, user.role.audit)
+            putBoolean(KEY_IS_OWNER, user.is_owner ?: false)
+            putBoolean(KEY_IS_EMAIL_VERIFIED, user.is_email_verified ?: false)
+            putBoolean(KEY_IS_TRIAL, user.is_trial ?: false)
+            putString(KEY_EMAIL_VERIFIED_DATE, user.demailverified)
             putBoolean(KEY_IS_LOGGED_IN, true)
             putBoolean(KEY_REMEMBER_ME, rememberMe)
             apply()
@@ -68,7 +76,11 @@ class SessionManager(context: Context) {
             company = prefs.getString(KEY_COMPANY, ""),
             department_id = if (deptId == -1) null else deptId,
             department_name = prefs.getString(KEY_DEPT_NAME, ""),
-            role = role
+            role = role,
+            is_owner = prefs.getBoolean(KEY_IS_OWNER, false),
+            is_email_verified = prefs.getBoolean(KEY_IS_EMAIL_VERIFIED, false),
+            is_trial = prefs.getBoolean(KEY_IS_TRIAL, false),
+            demailverified = prefs.getString(KEY_EMAIL_VERIFIED_DATE, null)
         )
     }
 
