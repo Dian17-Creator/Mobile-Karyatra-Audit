@@ -259,7 +259,7 @@ fun DepartmentSelector(
                         DropdownMenuItem(
                             text = { 
                                 Text(
-                                    text = department.name,
+                                    text = department.name ?: "",
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 )
@@ -326,7 +326,7 @@ fun CategoryMappingCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = category.name,
+                    text = category.name ?: "",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     color = Color(0xFFB63352)
                 )
@@ -356,7 +356,7 @@ fun CategoryMappingCard(
                         onCheckedChange = { onToggleQuestion(question.id) }
                     )
                     Text(
-                        text = question.question,
+                        text = question.question ?: "",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(start = 8.dp)
                     )

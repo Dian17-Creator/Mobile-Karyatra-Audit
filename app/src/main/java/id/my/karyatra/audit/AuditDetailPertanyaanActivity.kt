@@ -288,7 +288,7 @@ fun QuestionCard(
             ) {
                 // Question Text
                 Text(
-                    text = question.question,
+                    text = question.question ?: "",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Normal,

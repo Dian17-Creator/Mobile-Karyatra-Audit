@@ -124,7 +124,7 @@ fun AuditHasilScreen(
                         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                             uiState.departments.forEach { dept ->
                                 DropdownMenuItem(
-                                    text = { Text(dept.name) },
+                                    text = { Text(dept.name ?: "") },
                                     onClick = {
                                         viewModel.selectDepartment(dept)
                                         expanded = false
@@ -345,7 +345,7 @@ fun AuditReportDetailDialog(
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text(audit.documentId, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
+                    title = { Text(audit.documentId ?: "", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
                     navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
                     actions = {
                         IconButton(onClick = {
@@ -389,7 +389,7 @@ fun AuditReportDetailDialog(
                                     modifier = Modifier.weight(1f),
                                     icon = Icons.Default.Person,
                                     label = "Auditor",
-                                    value = audit.auditorName
+                                    value = audit.auditorName ?: ""
                                 )
                                 InfoItem(
                                     modifier = Modifier.weight(1f),
@@ -443,7 +443,7 @@ fun AuditReportDetailDialog(
                                 Column(modifier = Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("Auditor", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(audit.auditorName, textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                                    Text(audit.auditorName ?: "", textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                             Card(
@@ -478,7 +478,7 @@ fun AuditReportDetailDialog(
                 // Questions
                 items(detail.categories) { category ->
                     Text(
-                        text = category.name,
+                        text = category.name ?: "",
                         modifier = Modifier.padding(top = 8.dp),
                         style = MaterialTheme.typography.titleSmall,
                         color = primaryColor,
@@ -534,7 +534,7 @@ fun ResultQuestionCard(question: AuditQuestionDetail, index: Int) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Text(text = "$index.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.width(28.dp))
-                Text(text = question.question, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Text(text = question.question ?: "", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 
                 val score = currentResponse?.score ?: "-"
                 Surface(
@@ -560,7 +560,7 @@ fun ResultQuestionCard(question: AuditQuestionDetail, index: Int) {
                 ) {
                     Icon(Icons.Default.Description, null, modifier = Modifier.size(14.dp), tint = Color.Gray)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = currentResponse.remark, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
+                    Text(text = currentResponse.remark ?: "", style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
                 }
             }
 
