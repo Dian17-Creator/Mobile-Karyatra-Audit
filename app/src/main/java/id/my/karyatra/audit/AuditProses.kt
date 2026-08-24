@@ -636,16 +636,12 @@ fun QuestionExecutionCard(
                     val scores = listOf("N/A", "0", "0.5", "1", "1.5", "2")
                     scores.forEach { score ->
                         // Normalize comparison for decimal strings (e.g. "1.0" should match "1")
-                        val isSelected = remember(currentResponse?.score, score) {
-                            val respScore = currentResponse?.score
-                            if (respScore == null || score == "N/A") {
-                                respScore == score
+                        val isSelected = remember(currentResponse?.score, currentResponse?.isNa, score) {
+                            if (score == "N/A") {
+                                currentResponse?.isNa == true
                             } else {
-                                try {
-                                    respScore.toDouble() == score.toDouble()
-                                } catch (e: Exception) {
-                                    respScore == score
-                                }
+                                val targetScore = score.toDoubleOrNull()
+                                currentResponse?.score != null && targetScore != null && currentResponse.score == targetScore
                             }
                         }
                         
@@ -662,7 +658,8 @@ fun QuestionExecutionCard(
                     value = notes,
                     onValueChange = { 
                         notes = it
-                        onAnswerChanged(currentResponse?.score, it)
+                        val scoreToPass = if (currentResponse?.isNa == true) "N/A" else currentResponse?.score?.toString()
+                        onAnswerChanged(scoreToPass, it)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Catatan / Temuan") },

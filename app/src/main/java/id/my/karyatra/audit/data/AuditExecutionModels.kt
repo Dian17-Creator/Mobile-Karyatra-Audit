@@ -28,7 +28,7 @@ data class AuditPhotoDetail(
 
 data class AuditResponseDetail(
     @SerializedName("id") val id: Int,
-    @SerializedName("score") val score: String?,
+    @SerializedName("score") val score: Double?,
     @SerializedName("is_na") val isNa: Boolean,
     @SerializedName("remark") val remark: String?
 )
@@ -78,7 +78,7 @@ data class AuditDetailResponse(
 
 data class AuditAnswer(
     @SerializedName("question_id") val questionId: Int,
-    @SerializedName("score") val score: String?,
+    @SerializedName("score") val score: Double?,
     @SerializedName("is_na") val isNa: Boolean = false,
     @SerializedName("remark") val remark: String?
 )
