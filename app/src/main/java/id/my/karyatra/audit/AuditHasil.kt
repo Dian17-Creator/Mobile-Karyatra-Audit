@@ -536,15 +536,15 @@ fun ResultQuestionCard(question: AuditQuestionDetail, index: Int) {
                 Text(text = "$index.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.width(28.dp))
                 Text(text = question.question ?: "", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 
-                val score = currentResponse?.score ?: "-"
+                val scoreText = if (currentResponse?.isNa == true) "N/A" else currentResponse?.score?.toString() ?: "-"
                 Surface(
-                    color = getScoreColor(score).copy(alpha = 0.1f),
+                    color = getScoreColor(scoreText).copy(alpha = 0.1f),
                     shape = RoundedCornerShape(6.dp),
                     modifier = Modifier.size(width = 40.dp, height = 28.dp),
-                    border = BorderStroke(1.dp, getScoreColor(score).copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, getScoreColor(scoreText).copy(alpha = 0.3f))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(text = score, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = getScoreColor(score))
+                        Text(text = scoreText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = getScoreColor(scoreText))
                     }
                 }
             }

@@ -149,15 +149,27 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun onAnswerChanged(questionId: Int, score: String?, notes: String?) {
+    fun onAnswerChanged(questionId: Int, scoreString: String?, notes: String?) {
         val currentDetail = _uiState.value.auditDetail ?: return
+        
+        val isNa = scoreString == "N/A"
+        val numericScore = scoreString?.toDoubleOrNull()
+
         val updatedCategories = currentDetail.categories.map { category ->
             category.copy(questions = category.questions.map { question ->
                 if (question.id == questionId) {
                     val currentResp = question.response
                     question.copy(
-                        response = currentResp?.copy(score = score, remark = notes) 
-                            ?: AuditResponseDetail(id = 0, score = score, isNa = score == "N/A", remark = notes)
+                        response = currentResp?.copy(
+                            score = numericScore, 
+                            isNa = isNa,
+                            remark = notes
+                        ) ?: AuditResponseDetail(
+                            id = 0, 
+                            score = numericScore, 
+                            isNa = isNa, 
+                            remark = notes
+                        )
                     )
                 } else {
                     question
