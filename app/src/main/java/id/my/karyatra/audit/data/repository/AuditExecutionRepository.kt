@@ -180,4 +180,21 @@ class AuditExecutionRepository {
             ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
     }
+
+    suspend fun sendAuditEmail(request: SendEmailRequest): ApiResult<GenericResponse> {
+        return try {
+            val response = api.sendAuditEmail(request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Gagal mengirim email")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}. Periksa koneksi internet Anda.")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
+        }
+    }
 }

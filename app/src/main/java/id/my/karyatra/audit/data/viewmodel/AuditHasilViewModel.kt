@@ -16,13 +16,15 @@ import java.util.*
 
 data class AuditHasilUiState(
     val isLoading: Boolean = false,
+    val isEmailLoading: Boolean = false,
     val departments: List<DepartmentData> = emptyList(),
     val selectedDepartment: DepartmentData? = null,
     val dateFrom: String = "",
     val dateTo: String = "",
     val audits: List<AuditHistoryItem> = emptyList(),
     val selectedAuditDetail: AuditDetailContainer? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val emailSuccessMessage: String? = null
 )
 
 class AuditHasilViewModel(application: Application) : AndroidViewModel(application) {
@@ -109,6 +111,10 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(errorMessage = null) }
     }
 
+    fun clearEmailSuccess() {
+        _uiState.update { it.copy(emailSuccessMessage = null) }
+    }
+
     fun deleteAudit(auditId: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -118,6 +124,21 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                }
+            }
+        }
+    }
+
+    fun sendEmail(auditId: Int, email: String, message: String?) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isEmailLoading = true) }
+            val request = SendEmailRequest(auditId, email, message)
+            when (val result = executionRepository.sendAuditEmail(request)) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(isEmailLoading = false, emailSuccessMessage = result.data.message) }
+                }
+                is ApiResult.Error -> {
+                    _uiState.update { it.copy(isEmailLoading = false, errorMessage = result.message) }
                 }
             }
         }
