@@ -15,6 +15,22 @@ interface ApiService {
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
+    @POST("api/register")
+    suspend fun register(
+        @Body request: RegisterRequest
+    ): Response<RegisterResponse>
+
+    @POST("api/resend-verification")
+    suspend fun resendVerification(
+        @Body request: ResendVerificationRequest
+    ): Response<GenericResponse>
+
+    @GET("api/me")
+    suspend fun me(
+        @retrofit2.http.Query("user_id") userId: Int? = null,
+        @retrofit2.http.Query("email") email: String? = null
+    ): Response<LoginResponse>
+
     // Dashboard
     @GET("api/dashboard/summary")
     suspend fun getDashboardSummary(): Response<DashboardSummaryResponse>
