@@ -290,10 +290,11 @@ fun AuditHasilScreen(
         }
     }
 
-    // Detail Dialog
+    // detail dialog
     uiState.selectedAuditDetail?.let { detail ->
         AuditReportDetailDialog(
             detail = detail,
+            viewModel = viewModel,
             onDismiss = { viewModel.clearDetail() }
         )
     }
@@ -303,6 +304,13 @@ fun AuditHasilScreen(
         LaunchedEffect(msg) {
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
             viewModel.clearError()
+        }
+    }
+
+    uiState.emailSuccessMessage?.let { msg ->
+        LaunchedEffect(msg) {
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            viewModel.clearEmailSuccess()
         }
     }
 }
@@ -403,11 +411,31 @@ fun AuditDocumentItem(
 @Composable
 fun AuditReportDetailDialog(
     detail: AuditDetailContainer,
+    viewModel: AuditHasilViewModel = viewModel(),
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val audit = detail.audit
     val primaryColor = Color(0xFFB63352)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showEmailDialog by remember { mutableStateOf(false) }
+
+    if (showEmailDialog) {
+        AuditSendEmailDialog(
+            isLoading = uiState.isEmailLoading,
+            onDismiss = { showEmailDialog = false },
+            onSend = { email ->
+                viewModel.sendEmail(audit.id, email, null)
+            }
+        )
+    }
+
+    // Auto close email dialog on success
+    LaunchedEffect(uiState.emailSuccessMessage) {
+        if (uiState.emailSuccessMessage != null) {
+            showEmailDialog = false
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Scaffold(
@@ -416,6 +444,9 @@ fun AuditReportDetailDialog(
                     title = { Text(audit.documentId ?: "", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
                     navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
                     actions = {
+                        IconButton(onClick = { showEmailDialog = true }) {
+                            Icon(Icons.Default.Email, contentDescription = "Send Email")
+                        }
                         IconButton(onClick = {
                             val url = "https://audit-laravel.karyatra.cloud/api/audits/${audit.id}/export-pdf"
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -663,4 +694,71 @@ fun getScoreColor(score: String): Color {
         "2", "2.0" -> Color(0xFF4CAF50)
         else -> Color.Gray
     }
+}
+
+@Composable
+fun AuditSendEmailDialog(
+    isLoading: Boolean,
+    onDismiss: () -> Unit,
+    onSend: (String) -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var emailError by remember { mutableStateOf<String?>(null) }
+
+    fun validateEmail(target: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(target).matches()
+    }
+
+    AlertDialog(
+        onDismissRequest = if (isLoading) ({}) else onDismiss,
+        title = { Text("Kirim Laporan via Email", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = {
+                        email = it
+                        emailError = if (it.isEmpty()) "Email wajib diisi"
+                        else if (!validateEmail(it)) "Format email tidak valid"
+                        else null
+                    },
+                    label = { Text("Email Penerima") },
+                    placeholder = { Text("contoh@perusahaan.com") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = emailError != null,
+                    supportingText = { emailError?.let { Text(it) } },
+                    enabled = !isLoading,
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (email.isEmpty()) {
+                        emailError = "Email wajib diisi"
+                    } else if (!validateEmail(email)) {
+                        emailError = "Format email tidak valid"
+                    } else {
+                        onSend(email)
+                    }
+                },
+                enabled = !isLoading && emailError == null && email.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB63352))
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    Text("Kirim")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isLoading) {
+                Text("Batal")
+            }
+        },
+        shape = RoundedCornerShape(24.dp),
+        properties = DialogProperties(dismissOnBackPress = !isLoading, dismissOnClickOutside = !isLoading)
+    )
 }
