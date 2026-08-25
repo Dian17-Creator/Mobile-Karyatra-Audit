@@ -31,6 +31,7 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
 
     private val executionRepository: AuditExecutionRepository = AuditExecutionRepository()
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(AuditHasilUiState())
     val uiState: StateFlow<AuditHasilUiState> = _uiState.asStateFlow()
@@ -47,8 +48,9 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun fetchDepartments() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
-            departmentRepository.getDepartments().collect { result ->
+            departmentRepository.getDepartments(user.id).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         val depts = result.data.data ?: emptyList()
@@ -73,12 +75,13 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun fetchAudits() {
+        val user = sessionManager.getUser() ?: return
         val state = _uiState.value
         val deptId = state.selectedDepartment?.id ?: return
         
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, audits = emptyList()) }
-            when (val result = executionRepository.getAudits(deptId, state.dateFrom, state.dateTo)) {
+            when (val result = executionRepository.getAudits(user.id, deptId, state.dateFrom, state.dateTo)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isLoading = false, audits = result.data.data ?: emptyList()) }
                 }
@@ -90,9 +93,10 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun fetchAuditDetail(auditId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = executionRepository.getAuditDetail(auditId)) {
+            when (val result = executionRepository.getAuditDetail(user.id, auditId)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isLoading = false, selectedAuditDetail = result.data.data) }
                 }
@@ -116,9 +120,10 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun deleteAudit(auditId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = executionRepository.deleteAudit(auditId)) {
+            when (val result = executionRepository.deleteAudit(user.id, auditId)) {
                 is ApiResult.Success -> {
                     fetchAudits()
                 }
@@ -130,10 +135,11 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun sendEmail(auditId: Int, email: String, message: String?) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isEmailLoading = true) }
             val request = SendEmailRequest(auditId, email, message)
-            when (val result = executionRepository.sendAuditEmail(request)) {
+            when (val result = executionRepository.sendAuditEmail(user.id, request)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isEmailLoading = false, emailSuccessMessage = result.data.message) }
                 }

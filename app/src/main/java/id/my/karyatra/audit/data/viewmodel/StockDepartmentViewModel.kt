@@ -32,6 +32,7 @@ data class ConflictInfo(
 class StockDepartmentViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: StockRepository = StockRepository(application)
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(StockDepartmentUiState())
     val uiState: StateFlow<StockDepartmentUiState> = _uiState.asStateFlow()
@@ -45,11 +46,12 @@ class StockDepartmentViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun fetchDepartments() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             if (_uiState.value.departments.isEmpty()) {
                 _uiState.update { it.copy(isLoading = true) }
             }
-            repository.getDepartments().collect { result ->
+            repository.getDepartments(user.id).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
@@ -68,6 +70,7 @@ class StockDepartmentViewModel(application: Application) : AndroidViewModel(appl
     }
 
     private fun fetchMapping(departmentId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             // Instant load
             repository.getCachedMapping(departmentId)?.data?.let { mappingData ->
@@ -87,7 +90,7 @@ class StockDepartmentViewModel(application: Application) : AndroidViewModel(appl
                 _uiState.update { it.copy(isLoading = true) }
             }
             
-            repository.getDepartmentMapping(departmentId).collect { result ->
+            repository.getDepartmentMapping(user.id, departmentId).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         val mappingData = result.data.data
@@ -148,13 +151,14 @@ class StockDepartmentViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun saveMapping() {
+        val user = sessionManager.getUser() ?: return
         val departmentId = _uiState.value.selectedDepartment?.id ?: return
         val itemIds = _uiState.value.selectedItemIds.toList()
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             val request = SaveStockMappingRequest(departmentId, itemIds)
-            when (val result = repository.saveMapping(request)) {
+            when (val result = repository.saveMapping(user.id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isSaving = false, successMessage = result.data.message) }

@@ -25,6 +25,7 @@ data class AuditDepartmentUiState(
 class AuditDepartmentViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: AuditDepartmentRepository = AuditDepartmentRepository(application)
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(AuditDepartmentUiState())
     val uiState: StateFlow<AuditDepartmentUiState> = _uiState.asStateFlow()
@@ -34,8 +35,9 @@ class AuditDepartmentViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun fetchDepartments() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
-            repository.getDepartments().collect { result ->
+            repository.getDepartments(user.id).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
@@ -54,9 +56,10 @@ class AuditDepartmentViewModel(application: Application) : AndroidViewModel(appl
     }
 
     private fun fetchMapping(departmentId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getDepartmentMapping(departmentId)) {
+            when (val result = repository.getDepartmentMapping(user.id, departmentId)) {
                 is ApiResult.Success -> {
                     val mappingData = result.data.data
                     val categories = mappingData?.categories ?: emptyList()
@@ -115,13 +118,14 @@ class AuditDepartmentViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun saveMapping() {
+        val user = sessionManager.getUser() ?: return
         val departmentId = _uiState.value.selectedDepartment?.id ?: return
         val questionIds = _uiState.value.selectedQuestionIds.toList()
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             val request = SaveMappingRequest(departmentId, questionIds)
-            when (val result = repository.saveDepartmentMapping(request)) {
+            when (val result = repository.saveDepartmentMapping(user.id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isSaving = false, successMessage = result.data.message) }

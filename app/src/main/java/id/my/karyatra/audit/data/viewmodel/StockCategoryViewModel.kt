@@ -27,6 +27,7 @@ class StockCategoryViewModel(application: Application) : AndroidViewModel(applic
 
     private val repository: StockRepository = StockRepository(application)
     private val dashboardRepository: DashboardRepository = DashboardRepository(application)
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(StockCategoryUiState())
     val uiState: StateFlow<StockCategoryUiState> = _uiState.asStateFlow()
@@ -40,11 +41,12 @@ class StockCategoryViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun fetchCategories() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             if (_uiState.value.categories.isEmpty()) {
                 _uiState.update { it.copy(isLoading = true) }
             }
-            repository.getCategories().collect { result ->
+            repository.getCategories(user.id).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         _uiState.update { it.copy(isLoading = false, categories = result.data.data ?: emptyList()) }
@@ -82,10 +84,11 @@ class StockCategoryViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun addCategory(name: String, description: String?) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = StockCategoryRequest(name = name, description = description)
-            when (val result = repository.createCategory(request)) {
+            when (val result = repository.createCategory(user.id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()
@@ -103,10 +106,11 @@ class StockCategoryViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun updateCategory(id: Int, name: String, description: String?) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = StockCategoryRequest(name = name, description = description)
-            when (val result = repository.updateCategory(id, request)) {
+            when (val result = repository.updateCategory(user.id, id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()
@@ -124,9 +128,10 @@ class StockCategoryViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun deleteCategory(id: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.deleteCategory(id)) {
+            when (val result = repository.deleteCategory(user.id, id)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()

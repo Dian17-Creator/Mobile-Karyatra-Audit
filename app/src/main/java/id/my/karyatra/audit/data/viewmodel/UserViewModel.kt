@@ -29,7 +29,7 @@ class UserViewModel(private val repository: UserRepository = UserRepository()) :
     fun updateProfile(userId: Int, fullName: String, email: String, sessionManager: SessionManager) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.updateProfile(UpdateProfileRequest(userId, fullName, email))
+            val result = repository.updateProfile(userId, UpdateProfileRequest(userId, fullName, email))
             when (result) {
                 is ApiResult.Success -> {
                     result.data.data?.let { sessionManager.saveSession(it, sessionManager.isRememberMe()) }
@@ -49,7 +49,7 @@ class UserViewModel(private val repository: UserRepository = UserRepository()) :
     fun changePassword(userId: Int, current: String, new: String, confirm: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.changePassword(ChangePasswordRequest(userId, current, new, confirm))
+            val result = repository.changePassword(userId, ChangePasswordRequest(userId, current, new, confirm))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -86,7 +86,7 @@ class UserViewModel(private val repository: UserRepository = UserRepository()) :
     fun addUser(ownerId: Int, name: String, email: String, pass: String, level: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.addUser(AddUserRequest(ownerId, name, email, pass, level))
+            val result = repository.addUser(ownerId, AddUserRequest(ownerId, name, email, pass, level))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -106,7 +106,7 @@ class UserViewModel(private val repository: UserRepository = UserRepository()) :
     fun updateUserLevel(ownerId: Int, targetId: Int, level: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.updateLevel(targetId, UpdateLevelRequest(ownerId, level))
+            val result = repository.updateLevel(ownerId, targetId, UpdateLevelRequest(ownerId, level))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -126,7 +126,7 @@ class UserViewModel(private val repository: UserRepository = UserRepository()) :
     fun deleteUser(ownerId: Int, targetId: Int) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.deleteUser(targetId, DeleteUserRequest(ownerId))
+            val result = repository.deleteUser(ownerId, targetId, DeleteUserRequest(ownerId))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(

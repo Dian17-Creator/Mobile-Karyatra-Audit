@@ -46,8 +46,9 @@ class StockViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun fetchDashboardSummary() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
-            dashboardRepository.getDashboardSummary().collect { result ->
+            dashboardRepository.getDashboardSummary(user.id).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         val data = result.data.data
@@ -73,7 +74,7 @@ class StockViewModel(application: Application) : AndroidViewModel(application) {
         val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            stockOpnameRepository.getStockOpnameHistories(user.id).collect { result ->
+            stockOpnameRepository.getStockOpnameHistories(user.id, user.id).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         val allStockOpnames = result.data.data?.items?.map { item ->

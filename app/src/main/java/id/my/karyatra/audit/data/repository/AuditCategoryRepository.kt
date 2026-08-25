@@ -12,9 +12,9 @@ class AuditCategoryRepository {
 
     private val api = RetrofitClientLaravel.instance
 
-    suspend fun getCategories(): ApiResult<CategoryListResponse> {
+    suspend fun getCategories(userId: Int): ApiResult<CategoryListResponse> {
         return try {
-            val response = api.getCategories()
+            val response = api.getCategories(userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -29,9 +29,9 @@ class AuditCategoryRepository {
         }
     }
 
-    suspend fun createCategory(request: CategoryRequest): ApiResult<CategoryResponse> {
+    suspend fun createCategory(userId: Int, request: CategoryRequest): ApiResult<CategoryResponse> {
         return try {
-            val response = api.createCategory(request)
+            val response = api.createCategory(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -46,9 +46,9 @@ class AuditCategoryRepository {
         }
     }
 
-    suspend fun updateCategory(id: Int, request: CategoryRequest): ApiResult<CategoryResponse> {
+    suspend fun updateCategory(userId: Int, id: Int, request: CategoryRequest): ApiResult<CategoryResponse> {
         return try {
-            val response = api.updateCategory(id, request)
+            val response = api.updateCategory(id, request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -63,9 +63,9 @@ class AuditCategoryRepository {
         }
     }
 
-    suspend fun deleteCategory(id: Int): ApiResult<CategoryResponse> {
+    suspend fun deleteCategory(userId: Int, id: Int): ApiResult<CategoryResponse> {
         return try {
-            val response = api.deleteCategory(id)
+            val response = api.deleteCategory(id, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)

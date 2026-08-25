@@ -18,14 +18,14 @@ class StockRepository(context: Context) {
         private const val CACHE_KEY_STOCK_MAPPING_PREFIX = "stock_department_mapping_"
     }
 
-    fun getCategories(): Flow<ApiResult<StockCategoryListResponse>> = flow {
+    fun getCategories(userId: Int): Flow<ApiResult<StockCategoryListResponse>> = flow {
         val cached = getCachedCategories()
         if (cached != null) {
             emit(ApiResult.Success(cached))
         }
 
         try {
-            val response = api.getStockCategories()
+            val response = api.getStockCategories(userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -50,7 +50,7 @@ class StockRepository(context: Context) {
         }
     }
 
-    fun getCategory(id: Int): Flow<ApiResult<StockCategoryResponse>> = flow {
+    fun getCategory(userId: Int, id: Int): Flow<ApiResult<StockCategoryResponse>> = flow {
         val cacheKey = CACHE_KEY_STOCK_ITEMS_PREFIX + id
         val cached = getCachedItems(id)
         if (cached != null) {
@@ -58,7 +58,7 @@ class StockRepository(context: Context) {
         }
 
         try {
-            val response = api.getStockItems(id)
+            val response = api.getStockItems(id, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -83,9 +83,9 @@ class StockRepository(context: Context) {
         }
     }
 
-    suspend fun createCategory(request: StockCategoryRequest): ApiResult<StockCategoryResponse> {
+    suspend fun createCategory(userId: Int, request: StockCategoryRequest): ApiResult<StockCategoryResponse> {
         return try {
-            val response = api.createStockCategory(request)
+            val response = api.createStockCategory(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -103,10 +103,10 @@ class StockRepository(context: Context) {
         }
     }
 
-    suspend fun updateCategory(id: Int, request: StockCategoryRequest): ApiResult<StockCategoryResponse> {
+    suspend fun updateCategory(userId: Int, id: Int, request: StockCategoryRequest): ApiResult<StockCategoryResponse> {
         return try {
             val spoofedRequest = request.copy(method = "PUT")
-            val response = api.updateStockCategory(id, spoofedRequest)
+            val response = api.updateStockCategory(id, spoofedRequest, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -124,9 +124,9 @@ class StockRepository(context: Context) {
         }
     }
 
-    suspend fun deleteCategory(id: Int): ApiResult<GenericResponse> {
+    suspend fun deleteCategory(userId: Int, id: Int): ApiResult<GenericResponse> {
         return try {
-            val response = api.deleteStockCategory(id, StockDeleteRequest())
+            val response = api.deleteStockCategory(id, StockDeleteRequest(), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -144,9 +144,9 @@ class StockRepository(context: Context) {
         }
     }
 
-    suspend fun createItem(request: StockItemRequest): ApiResult<StockItemResponse> {
+    suspend fun createItem(userId: Int, request: StockItemRequest): ApiResult<StockItemResponse> {
         return try {
-            val response = api.createStockItem(request)
+            val response = api.createStockItem(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -164,9 +164,9 @@ class StockRepository(context: Context) {
         }
     }
 
-    suspend fun deleteItem(categoryId: Int, id: Int): ApiResult<GenericResponse> {
+    suspend fun deleteItem(userId: Int, categoryId: Int, id: Int): ApiResult<GenericResponse> {
         return try {
-            val response = api.deleteStockItem(id, StockDeleteRequest())
+            val response = api.deleteStockItem(id, StockDeleteRequest(), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -184,9 +184,9 @@ class StockRepository(context: Context) {
         }
     }
 
-    suspend fun reorderItems(request: StockReorderRequest): ApiResult<GenericResponse> {
+    suspend fun reorderItems(userId: Int, request: StockReorderRequest): ApiResult<GenericResponse> {
         return try {
-            val response = api.reorderStockItems(request)
+            val response = api.reorderStockItems(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -229,14 +229,14 @@ class StockRepository(context: Context) {
     }
 
     // Mapping Methods
-    fun getDepartments(): Flow<ApiResult<DepartmentListResponse>> = flow {
+    fun getDepartments(userId: Int): Flow<ApiResult<DepartmentListResponse>> = flow {
         val cached = cache.get(CACHE_KEY_STOCK_DEPARTMENTS, DepartmentListResponse::class.java)
         if (cached != null) {
             emit(ApiResult.Success(cached))
         }
 
         try {
-            val response = api.getStockDepartments()
+            val response = api.getStockDepartments(userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -257,7 +257,7 @@ class StockRepository(context: Context) {
         }
     }
 
-    fun getDepartmentMapping(id: Int): Flow<ApiResult<StockDepartmentMappingResponse>> = flow {
+    fun getDepartmentMapping(userId: Int, id: Int): Flow<ApiResult<StockDepartmentMappingResponse>> = flow {
         val cacheKey = CACHE_KEY_STOCK_MAPPING_PREFIX + id
         val cached = cache.get(cacheKey, StockDepartmentMappingResponse::class.java)
         if (cached != null) {
@@ -265,7 +265,7 @@ class StockRepository(context: Context) {
         }
 
         try {
-            val response = api.getStockDepartmentMapping(id)
+            val response = api.getStockDepartmentMapping(id, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -286,9 +286,9 @@ class StockRepository(context: Context) {
         }
     }
 
-    suspend fun saveMapping(request: SaveStockMappingRequest): ApiResult<GenericResponse> {
+    suspend fun saveMapping(userId: Int, request: SaveStockMappingRequest): ApiResult<GenericResponse> {
         return try {
-            val response = api.saveStockDepartmentMapping(request)
+            val response = api.saveStockDepartmentMapping(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {

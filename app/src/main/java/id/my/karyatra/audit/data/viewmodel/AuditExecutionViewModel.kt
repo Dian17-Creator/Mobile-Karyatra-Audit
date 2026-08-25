@@ -37,6 +37,7 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     private val executionRepository: AuditExecutionRepository = AuditExecutionRepository()
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
     private val dashboardRepository: DashboardRepository = DashboardRepository(application)
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(AuditExecutionUiState())
     val uiState: StateFlow<AuditExecutionUiState> = _uiState.asStateFlow()
@@ -51,8 +52,9 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     private fun fetchInitialData() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
-            departmentRepository.getDepartments().collect { result ->
+            departmentRepository.getDepartments(user.id).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
@@ -66,13 +68,14 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun selectDepartment(department: DepartmentData) {
+        val user = sessionManager.getUser() ?: return
         _uiState.update { it.copy(selectedDepartment = department, isLoading = true, existingDraftId = null) }
         
         viewModelScope.launch {
             val dateFrom = "2024-01-01"
             val dateTo = "2030-12-31"
             
-            when (val result = executionRepository.getAudits(department.id, dateFrom, dateTo)) {
+            when (val result = executionRepository.getAudits(user.id, department.id, dateFrom, dateTo)) {
                 is ApiResult.Success -> {
                     val audits = result.data.data ?: emptyList()
                     // Detect both "Draft" and "In Progress" as resumable
@@ -90,6 +93,7 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun startAudit(auditorId: Int) {
+        val user = sessionManager.getUser() ?: return
         val state = _uiState.value
         val deptId = state.selectedDepartment?.id ?: return
         
@@ -100,7 +104,7 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = executionRepository.createAudit(deptId, auditorId)) {
+            when (val result = executionRepository.createAudit(user.id, deptId, auditorId)) {
                 is ApiResult.Success -> {
                     val auditId = result.data.data?.id
                     if (auditId != null) {
@@ -118,9 +122,10 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun fetchAuditDetail(auditId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = executionRepository.getAuditDetail(auditId)) {
+            when (val result = executionRepository.getAuditDetail(user.id, auditId)) {
                 is ApiResult.Success -> {
                     val detail = result.data.data
                     _uiState.update { 
@@ -186,6 +191,7 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     private suspend fun performUpdate() {
+        val user = sessionManager.getUser() ?: return
         val container = _uiState.value.auditDetail ?: return
         val auditId = container.audit.id
         val answers = container.categories.flatMap { it.questions }.map {
@@ -198,7 +204,7 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
         }
 
         _uiState.update { it.copy(isSaving = true) }
-        when (val result = executionRepository.updateAudit(auditId, answers)) {
+        when (val result = executionRepository.updateAudit(user.id, auditId, answers)) {
             is ApiResult.Success -> {
                 _uiState.update { it.copy(isSaving = false) }
             }
@@ -209,10 +215,11 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun uploadPhoto(responseId: Int, photoFile: File) {
+        val user = sessionManager.getUser() ?: return
         val auditId = _uiState.value.auditDetail?.audit?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isUploading = true) }
-            when (val result = executionRepository.uploadPhoto(auditId, responseId, photoFile)) {
+            when (val result = executionRepository.uploadPhoto(user.id, auditId, responseId, photoFile)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isUploading = false) }
                     fetchAuditDetail(auditId)
@@ -225,9 +232,10 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun updatePhotoDetail(photoId: Int, observation: String?, recommendation: String?) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            when (val result = executionRepository.updatePhotoDetail(photoId, observation, recommendation)) {
+            when (val result = executionRepository.updatePhotoDetail(user.id, photoId, observation, recommendation)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isSaving = false) }
                     _uiState.value.auditDetail?.audit?.id?.let { fetchAuditDetail(it) }
@@ -240,9 +248,10 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun deletePhoto(photoId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            when (val result = executionRepository.deletePhoto(photoId)) {
+            when (val result = executionRepository.deletePhoto(user.id, photoId)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isSaving = false) }
                     _uiState.value.auditDetail?.audit?.id?.let { fetchAuditDetail(it) }
@@ -255,10 +264,11 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun submitAudit(auditeeName: String, verificationPhoto: File) {
+        val user = sessionManager.getUser() ?: return
         val auditId = _uiState.value.auditDetail?.audit?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, highlightedQuestionId = null) }
-            when (val result = executionRepository.submitAudit(auditId, auditeeName, verificationPhoto)) {
+            when (val result = executionRepository.submitAudit(user.id, auditId, auditeeName, verificationPhoto)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()

@@ -15,7 +15,7 @@ class DashboardRepository(context: Context) {
         private const val CACHE_KEY_DASHBOARD = "dashboard_summary"
     }
 
-    fun getDashboardSummary(): Flow<ApiResult<DashboardSummaryResponse>> = flow {
+    fun getDashboardSummary(userId: Int): Flow<ApiResult<DashboardSummaryResponse>> = flow {
         // 1. Emit cache
         val cached = getCachedSummary()
         if (cached != null) {
@@ -24,7 +24,7 @@ class DashboardRepository(context: Context) {
 
         // 2. Fetch from API
         try {
-            val response = api.getDashboardSummary()
+            val response = api.getDashboardSummary(userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {

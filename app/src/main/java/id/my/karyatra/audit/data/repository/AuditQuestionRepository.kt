@@ -7,9 +7,9 @@ class AuditQuestionRepository {
 
     private val api = RetrofitClientLaravel.instance
 
-    suspend fun getQuestions(categoryId: Int): ApiResult<QuestionListResponse> {
+    suspend fun getQuestions(userId: Int, categoryId: Int): ApiResult<QuestionListResponse> {
         return try {
-            val response = api.getQuestions(categoryId)
+            val response = api.getQuestions(categoryId, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -24,9 +24,9 @@ class AuditQuestionRepository {
         }
     }
 
-    suspend fun createQuestion(request: QuestionRequest): ApiResult<QuestionResponse> {
+    suspend fun createQuestion(userId: Int, request: QuestionRequest): ApiResult<QuestionResponse> {
         return try {
-            val response = api.createQuestion(request)
+            val response = api.createQuestion(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -41,9 +41,9 @@ class AuditQuestionRepository {
         }
     }
 
-    suspend fun updateQuestion(id: Int, request: QuestionRequest): ApiResult<QuestionResponse> {
+    suspend fun updateQuestion(userId: Int, id: Int, request: QuestionRequest): ApiResult<QuestionResponse> {
         return try {
-            val response = api.updateQuestion(id, request)
+            val response = api.updateQuestion(id, request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -58,9 +58,9 @@ class AuditQuestionRepository {
         }
     }
 
-    suspend fun deleteQuestion(id: Int): ApiResult<QuestionResponse> {
+    suspend fun deleteQuestion(userId: Int, id: Int): ApiResult<QuestionResponse> {
         return try {
-            val response = api.deleteQuestion(id)
+            val response = api.deleteQuestion(id, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -75,9 +75,9 @@ class AuditQuestionRepository {
         }
     }
 
-    suspend fun reorderQuestions(request: ReorderRequest): ApiResult<QuestionResponse> {
+    suspend fun reorderQuestions(userId: Int, request: ReorderRequest): ApiResult<QuestionResponse> {
         return try {
-            val response = api.reorderQuestions(request)
+            val response = api.reorderQuestions(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)

@@ -15,14 +15,14 @@ class AuditDepartmentRepository(context: Context) {
         private const val CACHE_KEY_DEPARTMENTS = "audit_departments_list"
     }
 
-    fun getDepartments(): Flow<ApiResult<DepartmentListResponse>> = flow {
+    fun getDepartments(userId: Int): Flow<ApiResult<DepartmentListResponse>> = flow {
         val cached = getCachedDepartments()
         if (cached != null) {
             emit(ApiResult.Success(cached))
         }
 
         try {
-            val response = api.getDepartments()
+            val response = api.getDepartments(userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -47,9 +47,9 @@ class AuditDepartmentRepository(context: Context) {
         return cache.get(CACHE_KEY_DEPARTMENTS, DepartmentListResponse::class.java)
     }
 
-    suspend fun getDepartmentMapping(id: Int): ApiResult<DepartmentMappingResponse> {
+    suspend fun getDepartmentMapping(userId: Int, id: Int): ApiResult<DepartmentMappingResponse> {
         return try {
-            val response = api.getDepartmentMapping(id)
+            val response = api.getDepartmentMapping(id, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -64,9 +64,9 @@ class AuditDepartmentRepository(context: Context) {
         }
     }
 
-    suspend fun saveDepartmentMapping(request: SaveMappingRequest): ApiResult<GenericResponse> {
+    suspend fun saveDepartmentMapping(userId: Int, request: SaveMappingRequest): ApiResult<GenericResponse> {
         return try {
-            val response = api.saveDepartmentMapping(request)
+            val response = api.saveDepartmentMapping(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
