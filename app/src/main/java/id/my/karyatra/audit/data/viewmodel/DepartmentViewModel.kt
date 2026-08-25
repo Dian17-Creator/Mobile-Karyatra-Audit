@@ -1,6 +1,7 @@
 package id.my.karyatra.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.karyatra.audit.data.*
 import id.my.karyatra.audit.data.repository.DepartmentRepository
@@ -17,7 +18,10 @@ data class DepartmentUiState(
     val isActionSuccess: Boolean = false
 )
 
-class DepartmentViewModel(private val repository: DepartmentRepository = DepartmentRepository()) : ViewModel() {
+class DepartmentViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository: DepartmentRepository = DepartmentRepository()
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(DepartmentUiState())
     val uiState: StateFlow<DepartmentUiState> = _uiState.asStateFlow()
@@ -27,9 +31,10 @@ class DepartmentViewModel(private val repository: DepartmentRepository = Departm
     }
 
     fun fetchDepartments() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.getDepartments()
+            val result = repository.getDepartments(user.id)
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -45,9 +50,10 @@ class DepartmentViewModel(private val repository: DepartmentRepository = Departm
     }
 
     fun addDepartment(ownerId: Int, name: String) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.addDepartment(DepartmentRequest(ownerId, name))
+            val result = repository.addDepartment(user.id, DepartmentRequest(ownerId, name))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -65,9 +71,10 @@ class DepartmentViewModel(private val repository: DepartmentRepository = Departm
     }
 
     fun updateDepartment(ownerId: Int, departmentId: Int, name: String) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.updateDepartment(departmentId, DepartmentRequest(ownerId, name))
+            val result = repository.updateDepartment(user.id, departmentId, DepartmentRequest(ownerId, name))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -85,9 +92,10 @@ class DepartmentViewModel(private val repository: DepartmentRepository = Departm
     }
 
     fun deleteDepartment(ownerId: Int, departmentId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.deleteDepartment(departmentId, DeleteDepartmentRequest(ownerId))
+            val result = repository.deleteDepartment(user.id, departmentId, DeleteDepartmentRequest(ownerId))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(

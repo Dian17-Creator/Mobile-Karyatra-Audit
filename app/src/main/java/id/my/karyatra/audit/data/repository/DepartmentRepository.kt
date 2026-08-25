@@ -5,9 +5,9 @@ import java.io.IOException
 
 class DepartmentRepository {
 
-    suspend fun getDepartments(): ApiResult<DepartmentListResponse> {
+    suspend fun getDepartments(userId: Int): ApiResult<DepartmentListResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.getDepartments()
+            val response = RetrofitClientLaravel.instance.getDepartments(userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -22,9 +22,9 @@ class DepartmentRepository {
         }
     }
 
-    suspend fun addDepartment(request: DepartmentRequest): ApiResult<DepartmentActionResponse> {
+    suspend fun addDepartment(userId: Int, request: DepartmentRequest): ApiResult<DepartmentActionResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.addDepartment(request)
+            val response = RetrofitClientLaravel.instance.addDepartment(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -39,9 +39,9 @@ class DepartmentRepository {
         }
     }
 
-    suspend fun updateDepartment(id: Int, request: DepartmentRequest): ApiResult<DepartmentActionResponse> {
+    suspend fun updateDepartment(userId: Int, id: Int, request: DepartmentRequest): ApiResult<DepartmentActionResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.updateDepartment(id, request)
+            val response = RetrofitClientLaravel.instance.updateDepartment(id, request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -56,9 +56,9 @@ class DepartmentRepository {
         }
     }
 
-    suspend fun deleteDepartment(id: Int, request: DeleteDepartmentRequest): ApiResult<GenericResponse> {
+    suspend fun deleteDepartment(userId: Int, id: Int, request: DeleteDepartmentRequest): ApiResult<GenericResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.deleteDepartment(id, request)
+            val response = RetrofitClientLaravel.instance.deleteDepartment(id, request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)

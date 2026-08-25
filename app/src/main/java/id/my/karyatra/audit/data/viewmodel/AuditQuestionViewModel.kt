@@ -1,6 +1,7 @@
 package id.my.karyatra.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.karyatra.audit.data.*
 import id.my.karyatra.audit.data.repository.AuditQuestionRepository
@@ -22,17 +23,19 @@ data class AuditQuestionUiState(
     val successMessage: String? = null
 )
 
-class AuditQuestionViewModel(
+class AuditQuestionViewModel(application: Application) : AndroidViewModel(application) {
+
     private val repository: AuditQuestionRepository = AuditQuestionRepository()
-) : ViewModel() {
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(AuditQuestionUiState())
     val uiState: StateFlow<AuditQuestionUiState> = _uiState.asStateFlow()
 
     fun fetchQuestions(categoryId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getQuestions(categoryId)) {
+            when (val result = repository.getQuestions(user.id, categoryId)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isLoading = false, questions = result.data.data ?: emptyList()) }
                 }
@@ -68,10 +71,11 @@ class AuditQuestionViewModel(
     }
 
     fun addQuestion(categoryId: Int, questionText: String) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = QuestionRequest(categoryId = categoryId, question = questionText)
-            when (val result = repository.createQuestion(request)) {
+            when (val result = repository.createQuestion(user.id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isLoading = false, isAddDialogOpen = false, successMessage = result.data.message) }
@@ -88,10 +92,11 @@ class AuditQuestionViewModel(
     }
 
     fun updateQuestion(categoryId: Int, id: Int, questionText: String) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = QuestionRequest(question = questionText)
-            when (val result = repository.updateQuestion(id, request)) {
+            when (val result = repository.updateQuestion(user.id, id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isLoading = false, isEditDialogOpen = false, successMessage = result.data.message) }
@@ -108,9 +113,10 @@ class AuditQuestionViewModel(
     }
 
     fun deleteQuestion(categoryId: Int, id: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.deleteQuestion(id)) {
+            when (val result = repository.deleteQuestion(user.id, id)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }
@@ -143,11 +149,12 @@ class AuditQuestionViewModel(
     }
 
     private fun reorder(categoryId: Int, newList: List<QuestionData>) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, questions = newList) }
             val ids = newList.map { it.id }
             val request = ReorderRequest(categoryId = categoryId, questionIds = ids)
-            when (val result = repository.reorderQuestions(request)) {
+            when (val result = repository.reorderQuestions(user.id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isLoading = false, successMessage = result.data.message) }

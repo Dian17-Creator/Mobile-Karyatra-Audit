@@ -31,6 +31,7 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
 
     private val opnameRepository: StockOpnameRepository = StockOpnameRepository(application)
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(StockOpnameHasilUiState())
     val uiState: StateFlow<StockOpnameHasilUiState> = _uiState.asStateFlow()
@@ -53,8 +54,9 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
     }
 
     private fun fetchDepartments() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
-            departmentRepository.getDepartments().collect { result ->
+            departmentRepository.getDepartments(user.id).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
@@ -78,6 +80,7 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun fetchOpnames(auditorId: Int) {
+        val user = sessionManager.getUser() ?: return
         val state = _uiState.value
         val deptId = state.selectedDepartment?.id ?: return
 
@@ -93,7 +96,7 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
                 _uiState.update { it.copy(isLoading = true) }
             }
 
-            opnameRepository.getStockOpnameHistories(auditorId, deptId, state.dateFrom, state.dateTo).collect { result ->
+            opnameRepository.getStockOpnameHistories(user.id, auditorId, deptId, state.dateFrom, state.dateTo).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         _uiState.update { it.copy(isLoading = false, opnames = result.data.data?.items ?: emptyList()) }
@@ -107,9 +110,10 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun fetchOpnameDetail(id: Int, auditorId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            opnameRepository.getStockOpnameDetail(id, auditorId).collect { result ->
+            opnameRepository.getStockOpnameDetail(user.id, id, auditorId).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         _uiState.update { it.copy(isLoading = false, selectedOpnameDetail = result.data.data) }
@@ -131,9 +135,10 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun sendEmail(auditId: Int, recipient: String, message: String?) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isEmailLoading = true) }
-            when (val result = opnameRepository.sendEmail(auditId, recipient, message)) {
+            when (val result = opnameRepository.sendEmail(user.id, auditId, recipient, message)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isEmailLoading = false, emailSuccessMessage = result.data.message) }
                 }

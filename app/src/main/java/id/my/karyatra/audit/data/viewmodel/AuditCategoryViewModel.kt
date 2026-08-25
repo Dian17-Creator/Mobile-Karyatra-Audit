@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import id.my.karyatra.audit.data.ApiResult
 import id.my.karyatra.audit.data.CategoryData
 import id.my.karyatra.audit.data.CategoryRequest
+import id.my.karyatra.audit.data.SessionManager
 import id.my.karyatra.audit.data.repository.AuditCategoryRepository
 import id.my.karyatra.audit.data.repository.DashboardRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,14 +30,16 @@ class AuditCategoryViewModel(application: Application) : AndroidViewModel(applic
 
     private val repository: AuditCategoryRepository = AuditCategoryRepository()
     private val dashboardRepository: DashboardRepository = DashboardRepository(application)
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(AuditCategoryUiState())
     val uiState: StateFlow<AuditCategoryUiState> = _uiState.asStateFlow()
 
     fun fetchCategories() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getCategories()) {
+            when (val result = repository.getCategories(user.id)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isLoading = false, categories = result.data.data ?: emptyList()) }
                 }
@@ -72,10 +75,11 @@ class AuditCategoryViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun addCategory(name: String, description: String?) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = CategoryRequest(name, description)
-            when (val result = repository.createCategory(request)) {
+            when (val result = repository.createCategory(user.id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()
@@ -93,10 +97,11 @@ class AuditCategoryViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun updateCategory(id: Int, name: String, description: String?) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = CategoryRequest(name, description)
-            when (val result = repository.updateCategory(id, request)) {
+            when (val result = repository.updateCategory(user.id, id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()
@@ -114,9 +119,10 @@ class AuditCategoryViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun deleteCategory(id: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.deleteCategory(id)) {
+            when (val result = repository.deleteCategory(user.id, id)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()

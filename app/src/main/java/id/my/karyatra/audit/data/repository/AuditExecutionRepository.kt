@@ -12,9 +12,9 @@ class AuditExecutionRepository {
 
     private val api = RetrofitClientLaravel.instance
 
-    suspend fun createAudit(departmentId: Int, auditorId: Int): ApiResult<AuditCreateResponse> {
+    suspend fun createAudit(userId: Int, departmentId: Int, auditorId: Int): ApiResult<AuditCreateResponse> {
         return try {
-            val response = api.createAudit(AuditCreateRequest(departmentId, auditorId))
+            val response = api.createAudit(AuditCreateRequest(departmentId, auditorId), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -29,9 +29,9 @@ class AuditExecutionRepository {
         }
     }
 
-    suspend fun getAuditDetail(auditId: Int): ApiResult<AuditDetailResponse> {
+    suspend fun getAuditDetail(userId: Int, auditId: Int): ApiResult<AuditDetailResponse> {
         return try {
-            val response = api.getAuditDetail(auditId)
+            val response = api.getAuditDetail(auditId, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -46,9 +46,9 @@ class AuditExecutionRepository {
         }
     }
 
-    suspend fun updateAudit(auditId: Int, answers: List<AuditAnswer>): ApiResult<AuditUpdateResponse> {
+    suspend fun updateAudit(userId: Int, auditId: Int, answers: List<AuditAnswer>): ApiResult<AuditUpdateResponse> {
         return try {
-            val response = api.updateAudit(AuditUpdateRequest(auditId, answers))
+            val response = api.updateAudit(AuditUpdateRequest(auditId, answers), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -63,7 +63,7 @@ class AuditExecutionRepository {
         }
     }
 
-    suspend fun uploadPhoto(auditId: Int, responseId: Int, photoFile: File): ApiResult<AuditUpdateResponse> {
+    suspend fun uploadPhoto(userId: Int, auditId: Int, responseId: Int, photoFile: File): ApiResult<AuditUpdateResponse> {
         return try {
             val auditIdBody = auditId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
             val responseIdBody = responseId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
@@ -73,7 +73,7 @@ class AuditExecutionRepository {
                 photoFile.asRequestBody("image/*".toMediaTypeOrNull())
             )
 
-            val response = api.uploadAuditPhoto(auditIdBody, responseIdBody, photoPart)
+            val response = api.uploadAuditPhoto(auditIdBody, responseIdBody, photoPart, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -88,9 +88,9 @@ class AuditExecutionRepository {
         }
     }
 
-    suspend fun updatePhotoDetail(photoId: Int, observation: String?, recommendation: String?): ApiResult<AuditUpdateResponse> {
+    suspend fun updatePhotoDetail(userId: Int, photoId: Int, observation: String?, recommendation: String?): ApiResult<AuditUpdateResponse> {
         return try {
-            val response = api.updateAuditPhoto(AuditPhotoUpdateData(photoId, observation, recommendation))
+            val response = api.updateAuditPhoto(AuditPhotoUpdateData(photoId, observation, recommendation), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -105,9 +105,9 @@ class AuditExecutionRepository {
         }
     }
 
-    suspend fun deletePhoto(photoId: Int): ApiResult<AuditUpdateResponse> {
+    suspend fun deletePhoto(userId: Int, photoId: Int): ApiResult<AuditUpdateResponse> {
         return try {
-            val response = api.deleteAuditPhoto(AuditDeletePhotoRequest(photoId))
+            val response = api.deleteAuditPhoto(AuditDeletePhotoRequest(photoId), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -122,7 +122,7 @@ class AuditExecutionRepository {
         }
     }
 
-    suspend fun submitAudit(auditId: Int, auditeeName: String, verificationPhotoFile: File): ApiResult<AuditSubmitResponse> {
+    suspend fun submitAudit(userId: Int, auditId: Int, auditeeName: String, verificationPhotoFile: File): ApiResult<AuditSubmitResponse> {
         return try {
             val auditIdBody = auditId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
             val auditeeNameBody = auditeeName.toRequestBody("text/plain".toMediaTypeOrNull())
@@ -132,7 +132,7 @@ class AuditExecutionRepository {
                 verificationPhotoFile.asRequestBody("image/*".toMediaTypeOrNull())
             )
 
-            val response = api.submitAudit(auditIdBody, auditeeNameBody, photoPart)
+            val response = api.submitAudit(auditIdBody, auditeeNameBody, photoPart, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -147,9 +147,9 @@ class AuditExecutionRepository {
         }
     }
 
-    suspend fun getAudits(departmentId: Int? = null, dateFrom: String? = null, dateTo: String? = null): ApiResult<AuditHistoryResponse> {
+    suspend fun getAudits(userId: Int, departmentId: Int? = null, dateFrom: String? = null, dateTo: String? = null): ApiResult<AuditHistoryResponse> {
         return try {
-            val response = api.getAudits(departmentId, dateFrom, dateTo)
+            val response = api.getAudits(userId, departmentId, dateFrom, dateTo)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -164,9 +164,9 @@ class AuditExecutionRepository {
         }
     }
 
-    suspend fun deleteAudit(auditId: Int): ApiResult<AuditUpdateResponse> {
+    suspend fun deleteAudit(userId: Int, auditId: Int): ApiResult<AuditUpdateResponse> {
         return try {
-            val response = api.deleteAudit(GenericIdRequest(auditId))
+            val response = api.deleteAudit(GenericIdRequest(auditId), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -181,9 +181,9 @@ class AuditExecutionRepository {
         }
     }
 
-    suspend fun sendAuditEmail(request: SendEmailRequest): ApiResult<GenericResponse> {
+    suspend fun sendAuditEmail(userId: Int, request: SendEmailRequest): ApiResult<GenericResponse> {
         return try {
-            val response = api.sendAuditEmail(request)
+            val response = api.sendAuditEmail(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)

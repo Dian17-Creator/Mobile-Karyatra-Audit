@@ -22,9 +22,9 @@ class StockOpnameRepository(context: Context) {
         private const val CACHE_KEY_OPNAME_DETAIL_PREFIX = "stock_opname_detail_"
     }
 
-    suspend fun createStockOpname(departmentId: Int, auditorId: Int): ApiResult<StockOpnameCreateResponse> {
+    suspend fun createStockOpname(userId: Int, departmentId: Int, auditorId: Int): ApiResult<StockOpnameCreateResponse> {
         return try {
-            val response = api.createStockOpname(StockOpnameCreateRequest(departmentId, auditorId))
+            val response = api.createStockOpname(StockOpnameCreateRequest(departmentId, auditorId), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -42,7 +42,7 @@ class StockOpnameRepository(context: Context) {
         }
     }
 
-    fun getStockOpnameDetail(id: Int, auditorId: Int): Flow<ApiResult<StockOpnameDetailResponse>> = flow {
+    fun getStockOpnameDetail(userId: Int, id: Int, auditorId: Int): Flow<ApiResult<StockOpnameDetailResponse>> = flow {
         val cacheKey = CACHE_KEY_OPNAME_DETAIL_PREFIX + id
         val cached = cache.get(cacheKey, StockOpnameDetailResponse::class.java)
         if (cached != null) {
@@ -50,7 +50,7 @@ class StockOpnameRepository(context: Context) {
         }
 
         try {
-            val response = api.getStockOpnameDetail(id, auditorId)
+            val response = api.getStockOpnameDetail(id, auditorId, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -75,9 +75,9 @@ class StockOpnameRepository(context: Context) {
         }
     }
 
-    suspend fun updateStockOpname(request: StockOpnameUpdateRequest): ApiResult<StockOpnameUpdateResponse> {
+    suspend fun updateStockOpname(userId: Int, request: StockOpnameUpdateRequest): ApiResult<StockOpnameUpdateResponse> {
         return try {
-            val response = api.updateStockOpname(request)
+            val response = api.updateStockOpname(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -95,7 +95,7 @@ class StockOpnameRepository(context: Context) {
         }
     }
 
-    suspend fun uploadPhoto(auditId: Int, responseId: Int, photoFile: File, remark: String?): ApiResult<StockOpnameUpdateResponse> {
+    suspend fun uploadPhoto(userId: Int, auditId: Int, responseId: Int, photoFile: File, remark: String?): ApiResult<StockOpnameUpdateResponse> {
         return try {
             val responseIdBody = responseId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
             val remarkBody = remark?.toRequestBody("text/plain".toMediaTypeOrNull())
@@ -105,7 +105,7 @@ class StockOpnameRepository(context: Context) {
                 photoFile.asRequestBody("image/*".toMediaTypeOrNull())
             )
 
-            val response = api.uploadStockOpnamePhoto(responseIdBody, photoPart, remarkBody)
+            val response = api.uploadStockOpnamePhoto(responseIdBody, photoPart, remarkBody, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -123,9 +123,9 @@ class StockOpnameRepository(context: Context) {
         }
     }
 
-    suspend fun updatePhotoRemark(auditId: Int, photoId: Int, remark: String?): ApiResult<StockOpnameUpdateResponse> {
+    suspend fun updatePhotoRemark(userId: Int, auditId: Int, photoId: Int, remark: String?): ApiResult<StockOpnameUpdateResponse> {
         return try {
-            val response = api.updateStockOpnamePhoto(StockOpnamePhotoUpdateRequest(photoId, remark))
+            val response = api.updateStockOpnamePhoto(StockOpnamePhotoUpdateRequest(photoId, remark), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -143,9 +143,9 @@ class StockOpnameRepository(context: Context) {
         }
     }
 
-    suspend fun deletePhoto(auditId: Int, photoId: Int): ApiResult<StockOpnameUpdateResponse> {
+    suspend fun deletePhoto(userId: Int, auditId: Int, photoId: Int): ApiResult<StockOpnameUpdateResponse> {
         return try {
-            val response = api.deleteStockOpnamePhoto(StockOpnamePhotoDeleteRequest(photoId))
+            val response = api.deleteStockOpnamePhoto(StockOpnamePhotoDeleteRequest(photoId), userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -163,7 +163,7 @@ class StockOpnameRepository(context: Context) {
         }
     }
 
-    suspend fun submitStockOpname(auditId: Int, auditeeName: String, verificationPhotoFile: File): ApiResult<StockOpnameUpdateResponse> {
+    suspend fun submitStockOpname(userId: Int, auditId: Int, auditeeName: String, verificationPhotoFile: File): ApiResult<StockOpnameUpdateResponse> {
         return try {
             val auditIdBody = auditId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
             val auditeeNameBody = auditeeName.toRequestBody("text/plain".toMediaTypeOrNull())
@@ -173,7 +173,7 @@ class StockOpnameRepository(context: Context) {
                 verificationPhotoFile.asRequestBody("image/*".toMediaTypeOrNull())
             )
 
-            val response = api.submitStockOpname(auditIdBody, auditeeNameBody, photoPart)
+            val response = api.submitStockOpname(auditIdBody, auditeeNameBody, photoPart, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -193,6 +193,7 @@ class StockOpnameRepository(context: Context) {
     }
 
     fun getStockOpnameHistories(
+        userId: Int,
         auditorId: Int,
         departmentId: Int? = null,
         dateFrom: String? = null,
@@ -206,7 +207,7 @@ class StockOpnameRepository(context: Context) {
         }
 
         try {
-            val response = api.getStockOpnameHistories(auditorId, departmentId, dateFrom, dateTo, page)
+            val response = api.getStockOpnameHistories(userId, auditorId, departmentId, dateFrom, dateTo, page)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
@@ -231,9 +232,9 @@ class StockOpnameRepository(context: Context) {
         }
     }
 
-    suspend fun downloadPdf(id: Int, auditorId: Int): ApiResult<okhttp3.ResponseBody> {
+    suspend fun downloadPdf(userId: Int, id: Int, auditorId: Int): ApiResult<okhttp3.ResponseBody> {
         return try {
-            val response = api.exportStockOpnamePdf(id, auditorId)
+            val response = api.exportStockOpnamePdf(id, auditorId, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -248,9 +249,9 @@ class StockOpnameRepository(context: Context) {
         }
     }
 
-    suspend fun sendEmail(auditId: Int, recipient: String, message: String?): ApiResult<GenericResponse> {
+    suspend fun sendEmail(userId: Int, auditId: Int, recipient: String, message: String?): ApiResult<GenericResponse> {
         return try {
-            val response = api.sendStockOpnameEmail(SendEmailRequest(auditId, recipient, message)) 
+            val response = api.sendStockOpnameEmail(SendEmailRequest(auditId, recipient, message), userId) 
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)

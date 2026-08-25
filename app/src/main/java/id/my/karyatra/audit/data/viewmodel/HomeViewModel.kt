@@ -89,8 +89,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun fetchDashboardSummary() {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
-            repository.getDashboardSummary().collect { result ->
+            repository.getDashboardSummary(user.id).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         val response = result.data

@@ -5,9 +5,9 @@ import java.io.IOException
 
 class UserRepository {
 
-    suspend fun updateProfile(request: UpdateProfileRequest): ApiResult<UserActionResponse> {
+    suspend fun updateProfile(userId: Int, request: UpdateProfileRequest): ApiResult<UserActionResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.updateProfile(request)
+            val response = RetrofitClientLaravel.instance.updateProfile(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -22,9 +22,9 @@ class UserRepository {
         }
     }
 
-    suspend fun changePassword(request: ChangePasswordRequest): ApiResult<GenericResponse> {
+    suspend fun changePassword(userId: Int, request: ChangePasswordRequest): ApiResult<GenericResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.changePassword(request)
+            val response = RetrofitClientLaravel.instance.changePassword(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -56,9 +56,9 @@ class UserRepository {
         }
     }
 
-    suspend fun addUser(request: AddUserRequest): ApiResult<UserActionResponse> {
+    suspend fun addUser(userId: Int, request: AddUserRequest): ApiResult<UserActionResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.addUser(request)
+            val response = RetrofitClientLaravel.instance.addUser(request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -73,9 +73,9 @@ class UserRepository {
         }
     }
 
-    suspend fun updateLevel(id: Int, request: UpdateLevelRequest): ApiResult<UserActionResponse> {
+    suspend fun updateLevel(userId: Int, id: Int, request: UpdateLevelRequest): ApiResult<UserActionResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.updateLevel(id, request)
+            val response = RetrofitClientLaravel.instance.updateLevel(id, request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -90,9 +90,9 @@ class UserRepository {
         }
     }
 
-    suspend fun deleteUser(id: Int, request: DeleteUserRequest): ApiResult<GenericResponse> {
+    suspend fun deleteUser(userId: Int, id: Int, request: DeleteUserRequest): ApiResult<GenericResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.deleteUser(id, request)
+            val response = RetrofitClientLaravel.instance.deleteUser(id, request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)

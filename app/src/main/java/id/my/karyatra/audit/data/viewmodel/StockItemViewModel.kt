@@ -28,11 +28,13 @@ class StockItemViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val repository: StockRepository = StockRepository(application)
     private val dashboardRepository: DashboardRepository = DashboardRepository(application)
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(StockItemUiState())
     val uiState: StateFlow<StockItemUiState> = _uiState.asStateFlow()
 
     fun fetchItems(categoryId: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             // Instant load
             if (_uiState.value.items.isEmpty()) {
@@ -45,7 +47,7 @@ class StockItemViewModel(application: Application) : AndroidViewModel(applicatio
                 _uiState.update { it.copy(isLoading = true) }
             }
             
-            repository.getCategory(categoryId).collect { result ->
+            repository.getCategory(user.id, categoryId).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         _uiState.update { it.copy(isLoading = false, items = result.data.data?.items ?: emptyList()) }
@@ -83,10 +85,11 @@ class StockItemViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun addItem(categoryId: Int, itemName: String) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = StockItemRequest(categoryId = categoryId, name = itemName)
-            when (val result = repository.createItem(request)) {
+            when (val result = repository.createItem(user.id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()
@@ -104,9 +107,10 @@ class StockItemViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun deleteItem(categoryId: Int, id: Int) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.deleteItem(categoryId, id)) {
+            when (val result = repository.deleteItem(user.id, categoryId, id)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()
@@ -140,11 +144,12 @@ class StockItemViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun reorder(categoryId: Int, newList: List<StockItemData>) {
+        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, items = newList) }
             val ids = newList.map { it.id }
             val request = StockReorderRequest(categoryId = categoryId, itemIds = ids)
-            when (val result = repository.reorderItems(request)) {
+            when (val result = repository.reorderItems(user.id, request)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         dashboardRepository.invalidateCache()
