@@ -160,6 +160,39 @@ interface ApiService {
         @Body request: GenericIdRequest
     ): Response<AuditUpdateResponse>
 
+    // User Management
+    @POST("api/user/profile")
+    suspend fun updateProfile(
+        @Body request: UpdateProfileRequest
+    ): Response<UserActionResponse>
+
+    @POST("api/user/change-password")
+    suspend fun changePassword(
+        @Body request: ChangePasswordRequest
+    ): Response<GenericResponse>
+
+    @GET("api/users")
+    suspend fun getUsers(
+        @retrofit2.http.Query("user_id") userId: Int
+    ): Response<UserListResponse>
+
+    @POST("api/users")
+    suspend fun addUser(
+        @Body request: AddUserRequest
+    ): Response<UserActionResponse>
+
+    @POST("api/users/{id}/level")
+    suspend fun updateLevel(
+        @Path("id") id: Int,
+        @Body request: UpdateLevelRequest
+    ): Response<UserActionResponse>
+
+    @POST("api/users/{id}/delete")
+    suspend fun deleteUser(
+        @Path("id") id: Int,
+        @Body request: DeleteUserRequest
+    ): Response<GenericResponse>
+
     // Stock Management
     @GET("api/stock/categories")
     suspend fun getStockCategories(): Response<StockCategoryListResponse>
