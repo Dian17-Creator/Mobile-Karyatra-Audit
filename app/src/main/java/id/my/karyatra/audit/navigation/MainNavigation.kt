@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Settings
 import androidx.navigation.compose.composable
 import id.my.karyatra.audit.ui.home.AuditHomeScreen
 import id.my.karyatra.audit.ui.profile.ProfileScreen
@@ -17,12 +18,14 @@ import id.my.karyatra.audit.ui.stock.StockScreen
 import id.my.karyatra.audit.ui.stock.StockScreen
 
 import id.my.karyatra.audit.ui.profile.ManageUsersScreen
+import id.my.karyatra.audit.ui.profile.ManageDepartmentsScreen
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Default.Home)
     object Stock : Screen("stock", "Stock", Icons.Default.Inventory2)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
     object ManageUsers : Screen("manage_users", "Manage Users", Icons.Default.People)
+    object ManageDepartments : Screen("manage_departments", "Manage Departments", Icons.Default.Settings)
 }
 
 @Composable
@@ -40,7 +43,8 @@ fun MainNavigation(
         composable(Screen.Home.route) {
             AuditHomeScreen(
                 username = username,
-                onManageUsers = { navController.navigate(Screen.ManageUsers.route) }
+                onManageUsers = { navController.navigate(Screen.ManageUsers.route) },
+                onManageDepartments = { navController.navigate(Screen.ManageDepartments.route) }
             )
         }
         composable(Screen.Stock.route) {
@@ -51,6 +55,9 @@ fun MainNavigation(
         }
         composable(Screen.ManageUsers.route) {
             ManageUsersScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Screen.ManageDepartments.route) {
+            ManageDepartmentsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

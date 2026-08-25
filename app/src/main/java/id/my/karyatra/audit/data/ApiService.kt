@@ -91,6 +91,23 @@ interface ApiService {
     @GET("api/audit/departments")
     suspend fun getDepartments(): Response<DepartmentListResponse>
 
+    @POST("api/departments")
+    suspend fun addDepartment(
+        @Body request: DepartmentRequest
+    ): Response<DepartmentActionResponse>
+
+    @POST("api/departments/{id}/update")
+    suspend fun updateDepartment(
+        @Path("id") id: Int,
+        @Body request: DepartmentRequest
+    ): Response<DepartmentActionResponse>
+
+    @POST("api/departments/{id}/delete")
+    suspend fun deleteDepartment(
+        @Path("id") id: Int,
+        @Body request: DeleteDepartmentRequest
+    ): Response<GenericResponse>
+
     @GET("api/audit/departments/{id}/mapping")
     suspend fun getDepartmentMapping(
         @Path("id") id: Int

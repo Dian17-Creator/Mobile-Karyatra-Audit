@@ -47,7 +47,8 @@ data class HomeMenu(
 fun AuditHomeScreen(
     username: String,
     viewModel: HomeViewModel = viewModel(),
-    onManageUsers: () -> Unit = {}
+    onManageUsers: () -> Unit = {},
+    onManageDepartments: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -137,7 +138,7 @@ fun AuditHomeScreen(
                 MenuCard(
                     menu = HomeMenu("Manage\nDepartment", R.drawable.auditdept),
                     modifier = Modifier.weight(1f),
-                    onClick = { /* Manage Dept placeholder */ }
+                    onClick = { onManageDepartments() }
                 )
             }
         }

@@ -69,21 +69,24 @@ fun MainContainer(
         Screen.Stock.route -> "Stok Opname"
         Screen.Profile.route -> "Profil Pengguna"
         Screen.ManageUsers.route -> "Manajemen Pengguna"
+        Screen.ManageDepartments.route -> "Manajemen Departemen"
         else -> "Audit Karyatra"
     }
+
+    val isManageScreen = currentRoute == Screen.ManageUsers.route || currentRoute == Screen.ManageDepartments.route
 
     Scaffold(
         topBar = {
             Header(
                 title = headerTitle,
-                onBack = if (currentRoute == Screen.ManageUsers.route) {
+                onBack = if (isManageScreen) {
                     { navController.popBackStack() }
                 } else null,
-                centerTitle = currentRoute == Screen.ManageUsers.route
+                centerTitle = isManageScreen
             )
         },
         bottomBar = {
-            if (currentRoute != Screen.ManageUsers.route) {
+            if (!isManageScreen) {
                 BottomBar(navController = navController)
             }
         }

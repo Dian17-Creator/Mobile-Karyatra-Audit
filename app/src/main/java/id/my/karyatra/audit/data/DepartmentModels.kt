@@ -41,6 +41,21 @@ data class SaveMappingRequest(
     @SerializedName("question_ids") val questionIds: List<Int>
 )
 
+data class DepartmentRequest(
+    @SerializedName("owner_id") val ownerId: Int,
+    @SerializedName("name") val name: String
+)
+
+data class DeleteDepartmentRequest(
+    @SerializedName("owner_id") val ownerId: Int
+)
+
+data class DepartmentActionResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: DepartmentData? = null
+)
+
 data class GenericResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String
