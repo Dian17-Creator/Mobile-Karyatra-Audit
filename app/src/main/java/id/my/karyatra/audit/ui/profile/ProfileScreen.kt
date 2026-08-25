@@ -32,14 +32,32 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import id.my.karyatra.audit.R
 import id.my.karyatra.audit.data.SessionManager
 
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import id.my.karyatra.audit.data.viewmodel.UserViewModel
+
 @Composable
 fun ProfileScreen(onLogout: () -> Unit) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
-    val user = sessionManager.getUser()
+    var user by remember { mutableStateOf(sessionManager.getUser()) }
+    val userViewModel: UserViewModel = viewModel()
+    
+    var showEditDialog by remember { mutableStateOf(false) }
     
     val primaryColor = Color(0xFFB63352)
     val backgroundColor = MaterialTheme.colorScheme.background
+
+    // Refresh user data when dialog closes or session updates
+    LaunchedEffect(showEditDialog) {
+        if (!showEditDialog) {
+            user = sessionManager.getUser()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -112,17 +130,29 @@ fun ProfileScreen(onLogout: () -> Unit) {
                     value = user?.email ?: "-"
                 )
 
-                ProfileInfoRow(
-                    painter = painterResource(id = R.drawable.auditdept),
-                    label = "Departemen",
-                    value = user?.department_name ?: "-"
-                )
+//                ProfileInfoRow(
+//                    painter = painterResource(id = R.drawable.auditdept),
+//                    label = "Departemen",
+//                    value = user?.department_name ?: "-"
+//                )
                 
                 ProfileInfoRow(
                     painter = painterResource(id = R.drawable.ic_company),
                     label = "Perusahaan",
                     value = user?.company ?: "-"
                 )
+                
+                // Edit Profile Button
+                OutlinedButton(
+                    onClick = { showEditDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, primaryColor)
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = primaryColor)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Edit Akun", color = primaryColor, fontWeight = FontWeight.Bold)
+                }
             }
         }
 
@@ -149,6 +179,15 @@ fun ProfileScreen(onLogout: () -> Unit) {
         }
         
         Spacer(modifier = Modifier.height(16.dp))
+    }
+
+    if (showEditDialog) {
+        EditProfileDialog(
+            user = user,
+            onDismiss = { showEditDialog = false },
+            viewModel = userViewModel,
+            sessionManager = sessionManager
+        )
     }
 }
 

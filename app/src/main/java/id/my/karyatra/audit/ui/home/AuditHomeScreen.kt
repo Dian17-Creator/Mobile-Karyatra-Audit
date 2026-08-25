@@ -46,16 +46,21 @@ data class HomeMenu(
 @Composable
 fun AuditHomeScreen(
     username: String,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(),
+    onManageUsers: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
     val sessionManager = remember { SessionManager(context) }
-    val userId = remember { sessionManager.getUser()?.id ?: -1 }
+    val user = sessionManager.getUser()
+    val userId = remember { user?.id ?: -1 }
+    val isOwner = remember { user?.is_owner ?: false }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    val primaryColor = Color(0xFFB63352)
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
@@ -106,8 +111,9 @@ fun AuditHomeScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        uiState.currentUser?.let { user ->
-            if (user.is_email_verified == false) {
+        uiState.currentUser?.let { u ->
+            // Only show verification banner for owners
+            if (u.is_owner == true && u.is_email_verified == false) {
                 VerificationBanner(
                     isResending = uiState.isResending,
                     onResend = { viewModel.resendVerification() }
@@ -116,6 +122,27 @@ fun AuditHomeScreen(
         }
 
         WelcomeCard(username = username)
+
+        if (isOwner) {
+            HomeSectionTitle(title = "Manage user & department")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                MenuCard(
+                    menu = HomeMenu("Manage\nUser", R.drawable.ic_profile3),
+                    modifier = Modifier.weight(1f),
+                    onClick = { onManageUsers() }
+                )
+                MenuCard(
+                    menu = HomeMenu("Manage\nDepartment", R.drawable.auditdept),
+                    modifier = Modifier.weight(1f),
+                    onClick = { /* Manage Dept placeholder */ }
+                )
+            }
+        }
+
+        HomeSectionTitle(title = "Audit")
 
         SummaryStatsSection(
             totalKategori = uiState.totalKategori,
@@ -141,6 +168,34 @@ fun AuditHomeScreen(
         }
         
         Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+@Composable
+fun HomeSectionTitle(title: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            thickness = 1.dp,
+            color = Color.LightGray.copy(alpha = 0.5f)
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            ),
+            color = Color.Gray,
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            thickness = 1.dp,
+            color = Color.LightGray.copy(alpha = 0.5f)
+        )
     }
 }
 
