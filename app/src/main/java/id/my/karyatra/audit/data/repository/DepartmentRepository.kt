@@ -39,9 +39,9 @@ class DepartmentRepository {
         }
     }
 
-    suspend fun updateDepartment(userId: Int, id: Int, request: DepartmentRequest): ApiResult<DepartmentActionResponse> {
+    suspend fun updateDepartment(userId: Int, departmentId: Int, request: DepartmentRequest): ApiResult<DepartmentActionResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.updateDepartment(id, request, userId)
+            val response = RetrofitClientLaravel.instance.updateDepartment(departmentId, request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -56,9 +56,9 @@ class DepartmentRepository {
         }
     }
 
-    suspend fun deleteDepartment(userId: Int, id: Int, request: DeleteDepartmentRequest): ApiResult<GenericResponse> {
+    suspend fun deleteDepartment(userId: Int, departmentId: Int, request: DeleteDepartmentRequest): ApiResult<GenericResponse> {
         return try {
-            val response = RetrofitClientLaravel.instance.deleteDepartment(id, request, userId)
+            val response = RetrofitClientLaravel.instance.deleteDepartment(departmentId, request, userId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)

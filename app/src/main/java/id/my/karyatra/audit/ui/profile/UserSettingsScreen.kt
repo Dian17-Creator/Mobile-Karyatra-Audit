@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -346,154 +347,218 @@ fun AddUserDialog(
 
     val primaryColor = Color(0xFFB63352)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(16.dp),
-        containerColor = Color.White,
-        title = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Tambah Pengguna",
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.5f))
-            }
-        },
-        text = {
-            if (isTrial) {
-                Text(
-                    "Manajemen pengguna dinonaktifkan selama mode trial. Silakan verifikasi email owner.",
-                    color = Color.Red,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 8.dp)) {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Nama Lengkap") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-                    )
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        trailingIcon = {
-                            val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(imageVector = image, contentDescription = null)
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            tonalElevation = 8.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth()
+            ) {
+                // Header with Close Button
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Text(
+                        text = "Tambah Pengguna",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        modifier = Modifier.align(Alignment.Center)
                     )
 
-//                    Row(
-//                        modifier = Modifier.fillMaxWidth(),
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//                        HorizontalDivider(
-//                            modifier = Modifier.weight(1f),
-//                            thickness = 1.dp,
-//                            color = Color.LightGray.copy(alpha = 0.5f)
-//                        )
-//                        Text(
-//                            text = "Rule",
-//                            modifier = Modifier.padding(horizontal = 12.dp),
-//                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-//                            color = Color.Gray
-//                        )
-//                        HorizontalDivider(
-//                            modifier = Modifier.weight(1f),
-//                            thickness = 1.dp,
-//                            color = Color.LightGray.copy(alpha = 0.5f)
-//                        )
-//                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Surface(
+                        onClick = onDismiss,
+                        shape = CircleShape,
+                        color = Color.LightGray.copy(alpha = 0.2f),
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(36.dp)
                     ) {
-                        Button(
-                            onClick = { level = "admin" },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (level == "admin") primaryColor else Color.Transparent,
-                                contentColor = if (level == "admin") Color.White else primaryColor
-                            ),
-                            border = if (level == "admin") null else BorderStroke(1.dp, primaryColor)
-                        ) {
-                            Text("Admin", fontWeight = FontWeight.Bold)
-                        }
-                        
-                        Button(
-                            onClick = { level = "audit" },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (level == "audit") primaryColor else Color.Transparent,
-                                contentColor = if (level == "audit") Color.White else primaryColor
-                            ),
-                            border = if (level == "audit") null else BorderStroke(1.dp, primaryColor)
-                        ) {
-                            Text("Auditor", fontWeight = FontWeight.Bold)
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Tutup",
+                                tint = Color.DarkGray,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    HorizontalDivider(thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.5f))
-                }
-            }
-        },
-        confirmButton = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, primaryColor)
-                ) {
-                    Text("Batal", color = primaryColor, fontWeight = FontWeight.Bold)
                 }
 
-                if (!isTrial) {
-                    Button(
-                        onClick = { 
-                            if (name.isBlank() || email.isBlank() || password.isBlank()) {
-                                Toast.makeText(context, "Harap isi semua bidang", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-                            onConfirm(name, email, password, level) 
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                        shape = RoundedCornerShape(12.dp)
+                if (isTrial) {
+                    Text(
+                        "Manajemen pengguna dinonaktifkan selama mode trial. Silakan verifikasi email owner.",
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp)
+                    )
+                } else {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Tambah", fontWeight = FontWeight.Bold)
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Nama Lengkap") },
+                            placeholder = { Text("Masukkan nama lengkap") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            maxLines = 1,
+                            leadingIcon = { Icon(Icons.Default.Person, null, tint = primaryColor.copy(alpha = 0.6f)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = primaryColor,
+                                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.6f)
+                            )
+                        )
+
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            placeholder = { Text("contoh@mail.com") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            maxLines = 1,
+                            leadingIcon = { Icon(Icons.Default.Email, null, tint = primaryColor.copy(alpha = 0.6f)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = primaryColor,
+                                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.6f)
+                            )
+                        )
+
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Password") },
+                            placeholder = { Text("••••••••") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            maxLines = 1,
+                            leadingIcon = { Icon(Icons.Default.Lock, null, tint = primaryColor.copy(alpha = 0.6f)) },
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(imageVector = image, contentDescription = null)
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = primaryColor,
+                                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.6f)
+                            )
+                        )
+
+                        // Role Selection
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "Pilih Role",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = Color.Gray
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                RoleToggleCard(
+                                    title = "Admin",
+                                    selected = level == "admin",
+                                    onClick = { level = "admin" },
+                                    modifier = Modifier.weight(1f),
+                                    primaryColor = primaryColor
+                                )
+                                RoleToggleCard(
+                                    title = "Auditor",
+                                    selected = level == "audit",
+                                    onClick = { level = "audit" },
+                                    modifier = Modifier.weight(1f),
+                                    primaryColor = primaryColor
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = { 
+                                if (name.isBlank() || email.isBlank() || password.isBlank()) {
+                                    Toast.makeText(context, "Harap isi semua bidang", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+                                onConfirm(name, email, password, level) 
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                        ) {
+                            Text(
+                                "Tambah Pengguna",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }
         }
-    )
+    }
+}
 
+@Composable
+fun RoleToggleCard(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    primaryColor: Color
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(48.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) primaryColor else Color.White,
+        border = if (selected) null else BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f)),
+        tonalElevation = if (selected) 4.dp else 0.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                ),
+                color = if (selected) Color.White else Color.Gray
+            )
+        }
+    }
 }
 
 @Composable

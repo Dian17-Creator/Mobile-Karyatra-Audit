@@ -106,7 +106,9 @@ class UserViewModel(private val repository: UserRepository = UserRepository()) :
     fun updateUserLevel(ownerId: Int, targetId: Int, level: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.updateLevel(ownerId, targetId, UpdateLevelRequest(ownerId, level))
+            // Updated parameter names for clarity and to trigger re-compilation
+            val request = UpdateLevelRequest(ownerId, level)
+            val result = repository.updateLevel(ownerId, targetId, request)
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
