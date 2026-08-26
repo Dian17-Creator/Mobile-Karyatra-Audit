@@ -1,46 +1,61 @@
 package id.my.karyatra.audit
 
+import android.Manifest
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import id.my.karyatra.audit.data.*
+import id.my.karyatra.audit.data.FileHelper
 import id.my.karyatra.audit.data.viewmodel.AuditExecutionUiState
 import id.my.karyatra.audit.data.viewmodel.AuditExecutionViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
-import id.my.karyatra.audit.component.Header
+import id.my.karyatra.audit.component.verticalScrollbar
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -50,10 +65,11 @@ class AuditProses : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val auditId = intent.getIntExtra("audit_id", -1)
         setContent {
             Karyatra_AuditTheme {
                 AuditExecutionScreen(
-                    auditId = intent.getIntExtra("audit_id", -1),
+                    auditId = auditId,
                     onBack = {
                         finish()
                     }
@@ -73,8 +89,9 @@ fun AuditExecutionScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
-    val userId = remember { sessionManager.getUser()?.id ?: 1 }
-    
+    val currentUser = sessionManager.getUser()
+    val userId = remember { currentUser?.id ?: -1 }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -106,7 +123,7 @@ fun AuditExecutionScreen(
             val categories = uiState.auditDetail?.categories ?: emptyList()
             var totalIndex = 1 // Offset for Info Card
             var found = false
-            
+
             for (category in categories) {
                 totalIndex++ // Category Header
                 val qIndex = category.questions.indexOfFirst { it.id == id }
@@ -119,7 +136,7 @@ fun AuditExecutionScreen(
                     totalIndex += category.questions.size
                 }
             }
-            
+
             if (found) {
                 coroutineScope.launch {
                     listState.animateScrollToItem(totalIndex)
@@ -173,302 +190,283 @@ fun StartAuditSection(
     onSelect: (DepartmentData) -> Unit,
     onStart: () -> Unit
 ) {
-    val primaryColor = Color(0xFFB63352)
     var expanded by remember { mutableStateOf(false) }
+    val brandColor = Color(0xFFB63352)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray.copy(alpha = 0.2f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Assignment,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = Color.LightGray
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Assignment,
+            contentDescription = null,
+            modifier = Modifier.size(80.dp),
+            tint = Color.LightGray
+        )
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = "Mulai Audit Baru",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = Color.Black
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
         )
-        
         Text(
             text = "Pilih departemen untuk memulai proses audit.",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp)
+            textAlign = TextAlign.Center
         )
-        
-        Spacer(modifier = Modifier.height(48.dp))
-        
-        // Department Dropdown
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedCard(
-                onClick = { expanded = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, if (selectedDepartment != null) primaryColor.copy(alpha = 0.5f) else Color.LightGray.copy(alpha = 0.5f))
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Business,
-                        contentDescription = null,
-                        tint = if (selectedDepartment != null) primaryColor else Color.Gray
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = selectedDepartment?.name ?: "Pilih Departemen",
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (selectedDepartment != null) Color.Black else Color.Gray
-                    )
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        tint = Color.Gray
-                    )
-                }
-            }
-            
-            Text(
-                text = "Departemen",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray,
-                modifier = Modifier
-                    .padding(start = 16.dp)
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 4.dp)
-                    .offset(y = (-8).dp)
-            )
+        Spacer(modifier = Modifier.height(32.dp))
 
-            DropdownMenu(
+        Box(modifier = Modifier.fillMaxWidth()) {
+            ExposedDropdownMenuBox(
                 expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .background(Color.White)
+                onExpandedChange = { expanded = !expanded }
             ) {
-                departments.forEach { dept ->
-                    DropdownMenuItem(
-                        text = { Text(dept.name ?: "") },
-                        onClick = {
-                            onSelect(dept)
-                            expanded = false
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Default.Business, contentDescription = null, tint = primaryColor)
-                        }
+                OutlinedTextField(
+                    value = selectedDepartment?.name ?: "Pilih Departemen",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Departemen") },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.auditdept),
+                            contentDescription = null,
+                            tint = brandColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = brandColor,
+                        focusedLabelColor = brandColor,
+                        unfocusedLabelColor = Color.Gray,
+                        unfocusedBorderColor = Color.LightGray,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
                     )
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.background(Color.White)
+                ) {
+                    val scrollState = rememberScrollState()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 250.dp)
+                            .verticalScrollbar(scrollState)
+                            .verticalScroll(scrollState)
+                    ) {
+                        departments.forEach { department ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = department.name ?: "",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                },
+                                onClick = {
+                                    onSelect(department)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         Button(
             onClick = onStart,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-            enabled = selectedDepartment != null && !isLoading
+            enabled = selectedDepartment != null && !isLoading,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (existingDraftId != null) Color(0xFF2196F3) else Color(0xFFB63352)
+            )
         ) {
             if (isLoading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
             } else {
-                Text(
-                    text = if (existingDraftId != null) "Lanjutkan Draft" else "Mulai Audit",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
+                Text(if (existingDraftId != null) "Lanjutkan Audit" else "Mulai Audit", fontWeight = FontWeight.Bold)
             }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AuditExecutionContent(
     uiState: AuditExecutionUiState,
     listState: androidx.compose.foundation.lazy.LazyListState,
     viewModel: AuditExecutionViewModel
 ) {
-    val detail = uiState.auditDetail ?: return
-    val audit = detail.audit
-    val primaryColor = Color(0xFFB63352)
+    val container = uiState.auditDetail ?: return
+    val audit = container.audit
+    val isReadOnly = audit.status == "Submitted"
+    val isAnyDialogOpen = uiState.isUploading || uiState.isSubmitting
+
     var showSubmitDialog by remember { mutableStateOf(false) }
+    var selectedPhoto by remember { mutableStateOf<AuditPhotoDetail?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(if (isAnyDialogOpen || selectedPhoto != null || showSubmitDialog) 16.dp else 0.dp)
         ) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.1f))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Business, null, tint = primaryColor, modifier = Modifier.size(20.dp))
+            // Audit Header
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column {
+                            Text(text = "Departemen", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text(text = audit.departmentName ?: "", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
+                        }
+                        StatusChip(status = audit.status ?: "Draft", isSolid = true)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Auditor", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text(text = audit.auditorName ?: "", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "No. Dokumen", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text(text = audit.documentId ?: "", style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+
+                    if (!isReadOnly) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { showSubmitDialog = true },
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = audit.departmentName ?: "", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            Text("Selesaikan Audit", fontWeight = FontWeight.Bold)
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            StatusChip(status = audit.status ?: "", isDraft = audit.status == "Draft")
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(text = "Progres: ${audit.percentage}%", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        LinearProgressIndicator(
-                            progress = { (audit.percentage / 100f).toFloat() },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(CircleShape),
-                            color = primaryColor,
-                            trackColor = primaryColor.copy(alpha = 0.1f)
-                        )
                     }
                 }
             }
 
-            detail.categories.forEach { category ->
-                val isExpanded = uiState.expandedCategoryIds.contains(category.id)
-                item(key = "cat_${category.id}") {
-                    CategoryHeader(
-                        category = category,
-                        isExpanded = isExpanded,
-                        onToggle = { viewModel.toggleCategory(category.id) }
-                    )
-                }
-
-                if (isExpanded) {
-                    itemsIndexed(category.questions, key = { _, q -> "q_${q.id}" }) { index, question ->
-                        QuestionExecutionCard(
-                            question = question,
-                            index = index + 1,
-                            isSaving = uiState.isSaving,
-                            isHighlighted = uiState.highlightedQuestionId == question.id,
-                            onSave = { score, note -> viewModel.onAnswerChanged(question.id, score, note) }
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp)
+            ) {
+                var questionGlobalIndex = 1
+                container.categories.forEach { category ->
+                    item(key = "cat_${category.id}") {
+                        CategoryHeader(
+                            category = category,
+                            isExpanded = uiState.expandedCategoryIds.contains(category.id),
+                            onToggle = { viewModel.toggleCategory(category.id) }
                         )
+                    }
+
+                    if (uiState.expandedCategoryIds.contains(category.id)) {
+                        category.questions.forEach { question ->
+                            val currentIdx = questionGlobalIndex++
+                            item(key = "q_${question.id}") {
+                                QuestionExecutionCard(
+                                    question = question,
+                                    displayIndex = currentIdx,
+                                    isHighlighted = uiState.highlightedQuestionId == question.id,
+                                    isReadOnly = isReadOnly,
+                                    onAnswerChanged = { score, notes -> viewModel.onAnswerChanged(question.id, score, notes) },
+                                    onUploadPhoto = { file ->
+                                        question.response?.id?.let { respId ->
+                                            viewModel.uploadPhoto(respId, file)
+                                        }
+                                    },
+                                    onPhotoClick = { selectedPhoto = it }
+                                )
+                            }
+                        }
+                    } else {
+                        // Increment index even if collapsed to maintain consistent numbering
+                        questionGlobalIndex += category.questions.size
                     }
                 }
             }
-            
-            item { Spacer(modifier = Modifier.height(80.dp)) }
         }
 
-        // Bottom Action Bar
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
-            tonalElevation = 8.dp,
-            shadowElevation = 8.dp,
-            color = Color.White
-        ) {
-            Row(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .navigationBarsPadding(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { /* Handle Save Draft */ },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, primaryColor)
-                ) {
-                    Text("Simpan Draft", color = primaryColor, fontWeight = FontWeight.Bold)
-                }
-
-                Button(
-                    onClick = { showSubmitDialog = true },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                    enabled = audit.percentage >= 100.0
-                ) {
-                    Text("Submit Audit", fontWeight = FontWeight.Bold)
+        if (uiState.isUploading || uiState.isSaving) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(modifier = Modifier.size(48.dp), color = Color.White)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = if (uiState.isUploading) "Mengunggah Foto..." else "Menyimpan...", color = Color.White)
                 }
             }
+        }
+        
+        if (showSubmitDialog) {
+            SubmitAuditDialog(
+                isSubmitting = uiState.isSubmitting,
+                onDismiss = { showSubmitDialog = false },
+                onSubmit = { name, photo ->
+                    viewModel.submitAudit(name, photo)
+                    showSubmitDialog = false
+                }
+            )
         }
     }
 
-    if (showSubmitDialog) {
-        SubmitAuditDialog(
-            isSubmitting = uiState.isSubmitting,
-            onDismiss = { showSubmitDialog = false },
-            onConfirm = { name, signFile ->
-                viewModel.submitAudit(name, signFile)
-                showSubmitDialog = false
+    selectedPhoto?.let { photo ->
+        PhotoDetailDialog(
+            photo = photo,
+            isReadOnly = isReadOnly,
+            onDismiss = { selectedPhoto = null },
+            onSave = { obs, rec ->
+                viewModel.updatePhotoDetail(photo.id, obs, rec)
+                selectedPhoto = null
+            },
+            onDelete = {
+                viewModel.deletePhoto(photo.id)
+                selectedPhoto = null
             }
         )
     }
 }
 
 @Composable
-fun StatusChip(
-    status: String,
-    isDraft: Boolean = false,
-    isSolid: Boolean = false
-) {
-    val color = when {
-        status.equals("Draft", ignoreCase = true) || isDraft -> Color(0xFF2196F3)
-        status.equals("Submitted", ignoreCase = true) || status.equals("Selesai", ignoreCase = true) -> Color(0xFF4CAF50)
+fun StatusChip(status: String, isSolid: Boolean = false) {
+    val color = when (status) {
+        "Submitted" -> Color(0xFF4CAF50)
+        "Draft" -> Color(0xFF2196F3)
         else -> Color.Gray
     }
     Surface(
         color = if (isSolid) color else color.copy(alpha = 0.1f),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(8.dp),
+        border = if (isSolid) null else BorderStroke(1.dp, color.copy(alpha = 0.5f))
     ) {
-        Row(
+        Text(
+            text = status,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (!isSolid) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(color)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-            }
-            Text(
-                text = status,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = if (isSolid) Color.White else color
-            )
-        }
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = if (isSolid) Color.White else color
+        )
     }
 }
 
@@ -478,153 +476,387 @@ fun CategoryHeader(
     isExpanded: Boolean,
     onToggle: () -> Unit
 ) {
-    val primaryColor = Color(0xFFB63352)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggle() },
-        color = if (isExpanded) primaryColor.copy(alpha = 0.05f) else Color.Transparent,
-        shape = RoundedCornerShape(12.dp)
+        color = Color(0xFFB63352).copy(alpha = 0.05f)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = category.name ?: "",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = if (isExpanded) primaryColor else Color.Black
-                )
-                Text(
-                    text = "${category.questions.size} Pertanyaan",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray
-                )
-            }
+            Text(
+                text = category.name ?: "",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFFB63352)
+            )
             Icon(
                 imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 contentDescription = null,
-                tint = if (isExpanded) primaryColor else Color.Gray
+                tint = Color(0xFFB63352)
             )
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuestionExecutionCard(
     question: AuditQuestionDetail,
-    index: Int,
-    isSaving: Boolean,
+    displayIndex: Int,
     isHighlighted: Boolean,
-    onSave: (String?, String?) -> Unit
+    isReadOnly: Boolean,
+    onAnswerChanged: (String?, String?) -> Unit,
+    onUploadPhoto: (File) -> Unit,
+    onPhotoClick: (AuditPhotoDetail) -> Unit
 ) {
-    val primaryColor = Color(0xFFB63352)
-    var note by remember(question.id) { mutableStateOf(question.response?.remark ?: "") }
-    
+    val context = LocalContext.current
+    val currentResponse = question.response
+    var notes by remember(question.id) { mutableStateOf(currentResponse?.remark ?: "") }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Sync notes if changed externally
+    LaunchedEffect(currentResponse?.remark) {
+        if (currentResponse?.remark != notes) {
+            notes = currentResponse?.remark ?: ""
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val file = FileHelper.uriToFile(context, it)
+            if (file != null) onUploadPhoto(file)
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            cameraImageUri?.let { uri ->
+                val file = FileHelper.uriToFile(context, uri)
+                if (file != null) onUploadPhoto(file)
+            }
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val file = File(context.cacheDir, "camera_image_${System.currentTimeMillis()}.jpg")
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            cameraImageUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            Toast.makeText(context, "Izin kamera diperlukan untuk mengambil foto.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    if (showImageSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageSourceDialog = false },
+            title = { Text("Ambil Foto") },
+            text = { Text("Pilih sumber foto temuan.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        val file = File(context.cacheDir, "camera_image_${System.currentTimeMillis()}.jpg")
+                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                        cameraImageUri = uri
+                        cameraLauncher.launch(uri)
+                    } else {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                    showImageSourceDialog = false
+                }) {
+                    Text("Kamera")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    galleryLauncher.launch("image/*")
+                    showImageSourceDialog = false
+                }) {
+                    Text("Galeri")
+                }
+            }
+        )
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                width = if (isHighlighted) 2.dp else 0.dp,
-                color = if (isHighlighted) primaryColor else Color.Transparent,
-                shape = RoundedCornerShape(16.dp)
-            ),
+            .padding(horizontal = 6.dp, vertical = 6.dp)
+            .animateContentSize(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = if (isHighlighted) Color(0xFFFFF9C4) else Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row {
-                Surface(
-                    modifier = Modifier.size(24.dp),
-                    shape = CircleShape,
-                    color = primaryColor.copy(alpha = 0.1f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(text = index.toString(), style = MaterialTheme.typography.labelSmall, color = primaryColor, fontWeight = FontWeight.Bold)
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(text = question.question ?: "", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Score Selection
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Surface(
+                modifier = Modifier.size(28.dp),
+                shape = CircleShape,
+                color = Color(0xFFB83257)
             ) {
-                listOf("YES", "NO", "N/A").forEach { score ->
-                    val isSelected = when(score) {
-                        "YES" -> question.response?.score == 1.0 && question.response?.isNa == false
-                        "NO" -> question.response?.score == 0.0 && question.response?.isNa == false
-                        "N/A" -> question.response?.isNa == true
-                        else -> false
-                    }
-                    
-                    ScoreChip(
-                        score = score,
-                        isSelected = isSelected,
-                        isSaving = isSaving,
-                        onClick = { onSave(if(score == "YES") "1" else if(score == "NO") "0" else "N/A", note.ifBlank { null }) }
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = displayIndex.toString().padStart(2, '0'),
+                        style = androidx.compose.ui.text.TextStyle(
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Question Text
+                Text(
+                    text = question.question ?: "",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        lineHeight = 22.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Catatan Temuan (Opsional)") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                textStyle = MaterialTheme.typography.bodySmall,
-                trailingIcon = {
-                    if (note != (question.response?.remark ?: "")) {
-                        IconButton(onClick = { onSave(if(question.response?.isNa == true) "N/A" else question.response?.score?.toInt()?.toString(), note.ifBlank { null }) }) {
-                            Icon(Icons.Default.Save, null, tint = primaryColor)
+                // Score Selection
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val scores = listOf("N/A", "0", "0.5", "1", "1.5", "2")
+                    scores.forEach { score ->
+                        val isSelected = remember(currentResponse?.score, currentResponse?.isNa, score) {
+                            if (score == "N/A") {
+                                currentResponse?.isNa == true
+                            } else {
+                                val targetScore = score.toDoubleOrNull()
+                                currentResponse?.score != null && targetScore != null && currentResponse.score == targetScore
+                            }
+                        }
+
+                        ScoreChip(
+                            score = score,
+                            isSelected = isSelected,
+                            enabled = !isReadOnly,
+                            onClick = { onAnswerChanged(score, notes) }
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = {
+                        notes = it
+                        val scoreToPass = if (currentResponse?.isNa == true) "N/A" else currentResponse?.score?.toString()
+                        onAnswerChanged(scoreToPass, it)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Catatan / Temuan") },
+                    placeholder = { Text("Tuliskan detail temuan di sini...") },
+                    enabled = !isReadOnly,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                // Photo Grid
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "Foto Temuan (${question.photos.size}/10)", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+
+                    if (question.photos.size < 10 && !isReadOnly) {
+                        IconButton(onClick = { showImageSourceDialog = true }) {
+                            Icon(Icons.Default.AddAPhoto, contentDescription = "Add Photo", tint = Color(0xFFB63352))
                         }
                     }
                 }
-            )
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    question.photos.forEach { photo ->
+                        AsyncImage(
+                            model = photo.photoPath,
+                            contentDescription = "Foto Temuan",
+                            modifier = Modifier
+                                .size(53.5.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.LightGray)
+                                .clickable { onPhotoClick(photo) },
+                            contentScale = ContentScale.Crop,
+                            onError = {
+                                android.util.Log.e("AuditProses", "Gagal memuat gambar: ${photo.photoPath}")
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScoreChip(
-    score: String,
-    isSelected: Boolean,
-    isSaving: Boolean,
-    onClick: () -> Unit
-) {
+fun ScoreChip(score: String, isSelected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     val color = when (score) {
-        "YES" -> Color(0xFF4CAF50)
-        "NO" -> Color(0xFFF44336)
+        "N/A" -> Color(0xFF9E9E9E)
+        "0" -> Color(0xFFF44336)
+        "0.5" -> Color(0xFFFF9800)
+        "1" -> Color(0xFFFFEB3B)
+        "1.5" -> Color(0xFF2196F3)
+        "2" -> Color(0xFF4CAF50)
         else -> Color.Gray
     }
 
-    Surface(
-        modifier = Modifier
-            .width(90.dp)
-            .height(40.dp)
-            .clickable(enabled = !isSaving) { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) color else Color.Transparent,
-        border = BorderStroke(1.dp, if (isSelected) color else Color.LightGray.copy(alpha = 0.5f))
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            if (isSaving && isSelected) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
-            } else {
-                Text(
-                    text = score,
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = if (isSelected) Color.White else Color.Gray
+    FilterChip(
+        selected = isSelected,
+        onClick = onClick,
+        label = { Text(score, fontWeight = FontWeight.Bold) },
+        enabled = enabled,
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = color,
+            selectedLabelColor = if (score == "1") Color.Black else Color.White,
+            containerColor = color.copy(alpha = 0.1f),
+            labelColor = color
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = enabled,
+            selected = isSelected,
+            borderColor = color.copy(alpha = 0.5f),
+            selectedBorderColor = color
+        )
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PhotoDetailDialog(
+    photo: AuditPhotoDetail,
+    isReadOnly: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit,
+    onDelete: () -> Unit
+) {
+    var observation by remember { mutableStateOf(photo.remark ?: "") }
+    var recommendation by remember { mutableStateOf(photo.action ?: "") }
+
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text("Detail Foto Temuan", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+                    navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
+                    actions = {
+                        if (!isReadOnly) {
+                            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, null, tint = Color.Red) }
+                        }
+                    }
                 )
+            },
+            bottomBar = {
+                if (!isReadOnly) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        tonalElevation = 8.dp,
+                        shadowElevation = 8.dp
+                    ) {
+                        Button(
+                            onClick = { onSave(observation, recommendation) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB63352))
+                        ) {
+                            Text("Simpan Perubahan", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                AsyncImage(
+                    model = photo.photoPath,
+                    contentDescription = "Detail Foto",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.LightGray),
+                    contentScale = ContentScale.Fit,
+                    onError = {
+                        android.util.Log.e("AuditProses", "Gagal memuat detail gambar: ${photo.photoPath}")
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                val brandColor = Color(0xFFB63352)
+
+                OutlinedTextField(
+                    value = observation,
+                    onValueChange = { observation = it },
+                    label = { Text("Hasil Pengamatan") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isReadOnly,
+                    minLines = 3,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = brandColor,
+                        focusedLabelColor = brandColor,
+                        cursorColor = brandColor
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = recommendation,
+                    onValueChange = { recommendation = it },
+                    label = { Text("Rekomendasi") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isReadOnly,
+                    minLines = 3,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = brandColor,
+                        focusedLabelColor = brandColor,
+                        cursorColor = brandColor
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -634,21 +866,213 @@ fun ScoreChip(
 fun SubmitAuditDialog(
     isSubmitting: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: (String, File) -> Unit
+    onSubmit: (String, File) -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Submit Hasil Audit") },
-        text = { Text("Pastikan semua data sudah benar sebelum mengirim.") },
-        confirmButton = {
-            Button(onClick = { /* onConfirm implementation */ }) {
-                Text("Kirim Sekarang")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal")
+    var auditeeName by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    var photoFile by remember { mutableStateOf<File?>(null) }
+    var showSourceDialog by remember { mutableStateOf(false) }
+    var cameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { photoFile = FileHelper.uriToFile(context, it) }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            cameraUri?.let { uri ->
+                photoFile = FileHelper.uriToFile(context, uri)
             }
         }
-    )
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val file = File(context.cacheDir, "verify_image_${System.currentTimeMillis()}.jpg")
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            cameraUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            Toast.makeText(context, "Izin kamera diperlukan untuk mengambil foto verifikasi.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    if (showSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showSourceDialog = false },
+            title = { Text("Pilih Foto Verifikasi", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+            text = { Text("Ambil foto dari kamera atau pilih dari galeri untuk melengkapi verifikasi audit.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        val file = File(context.cacheDir, "verify_image_${System.currentTimeMillis()}.jpg")
+                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                        cameraUri = uri
+                        cameraLauncher.launch(uri)
+                    } else {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                    showSourceDialog = false
+                }) {
+                    Text("Kamera", color = Color(0xFFB63352), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    galleryLauncher.launch("image/*")
+                    showSourceDialog = false
+                }) {
+                    Text("Galeri", color = Color.Gray)
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color.White
+        )
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            tonalElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                Text(
+                    text = "Verifikasi & Selesaikan",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                    color = Color.Black
+                )
+
+                Text(
+                    text = "Lengkapi data perwakilan dan foto verifikasi sebelum menyelesaikan audit ini.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+
+                val brandColor = Color(0xFFB63352)
+
+                OutlinedTextField(
+                    value = auditeeName,
+                    onValueChange = { auditeeName = it },
+                    label = { Text("Nama Perwakilan") },
+                    placeholder = { Text("Nama PIC Departemen") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = brandColor,
+                        focusedLabelColor = brandColor,
+                        cursorColor = brandColor
+                    ),
+                    singleLine = true
+                )
+
+                if (photoFile != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(16.dp))
+                    ) {
+                        AsyncImage(
+                            model = photoFile,
+                            contentDescription = "Preview",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
+                                .size(32.dp)
+                                .clickable { photoFile = null },
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.5f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remove",
+                                tint = Color.White,
+                                modifier = Modifier.padding(6.dp)
+                            )
+                        }
+                    }
+                } else {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .clickable { showSourceDialog = true },
+                        shape = RoundedCornerShape(16.dp),
+                        color = brandColor.copy(alpha = 0.05f),
+                        border = BorderStroke(1.dp, brandColor.copy(alpha = 0.2f))
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddAPhoto,
+                                contentDescription = null,
+                                tint = brandColor,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Ambil Foto Verifikasi",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = brandColor
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color.LightGray)
+                    ) {
+                        Text("Batal", color = Color.Gray)
+                    }
+
+                    Button(
+                        onClick = { photoFile?.let { onSubmit(auditeeName, it) } },
+                        enabled = auditeeName.isNotBlank() && photoFile != null && !isSubmitting,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        if (isSubmitting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Selesaikan", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

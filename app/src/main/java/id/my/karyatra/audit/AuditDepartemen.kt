@@ -10,6 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -18,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -170,6 +173,7 @@ fun AuditDepartemenScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DepartmentSelector(
     departments: List<DepartmentData>,
@@ -189,64 +193,65 @@ fun DepartmentSelector(
         border = BorderStroke(1.dp, if (selectedDepartment != null) primaryColor.copy(alpha = 0.5f) else Color.LightGray.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Pilih Departemen",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Box {
-                OutlinedCard(
-                    onClick = { expanded = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                            Icon(
-                                imageVector = Icons.Default.Business,
-                                contentDescription = null,
-                                tint = if (selectedDepartment != null) primaryColor else Color.Gray
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = selectedDepartment?.name ?: "Pilih Departemen...",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (selectedDepartment != null) Color.Black else Color.Gray
-                            )
-                        }
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = selectedDepartment?.name ?: "Pilih Departemen",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Departemen") },
+                    leadingIcon = {
                         Icon(
-                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            painter = painterResource(id = R.drawable.auditdept),
                             contentDescription = null,
-                            tint = Color.Gray
+                            tint = primaryColor,
+                            modifier = Modifier.size(24.dp)
                         )
-                    }
-                }
-
-                DropdownMenu(
+                    },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = primaryColor,
+                        focusedLabelColor = primaryColor,
+                        unfocusedLabelColor = Color.Gray,
+                        unfocusedBorderColor = Color.LightGray,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
+                )
+                ExposedDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .background(Color.White)
+                    modifier = Modifier.background(Color.White)
                 ) {
-                    departments.forEach { dept ->
-                        DropdownMenuItem(
-                            text = { Text(dept.name ?: "") },
-                            onClick = {
-                                onSelect(dept)
-                                expanded = false
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Business, contentDescription = null, tint = primaryColor)
-                            }
-                        )
+                    val scrollState = rememberScrollState()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 250.dp)
+                            .verticalScroll(scrollState)
+                    ) {
+                        departments.forEach { dept ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = dept.name ?: "",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                },
+                                onClick = {
+                                    onSelect(dept)
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
