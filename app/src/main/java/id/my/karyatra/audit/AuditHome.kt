@@ -22,6 +22,7 @@ import id.my.karyatra.audit.data.SessionManager
 import id.my.karyatra.audit.navigation.MainNavigation
 import id.my.karyatra.audit.navigation.Screen
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
+import id.my.karyatra.audit.component.Header
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
@@ -68,25 +69,33 @@ fun MainContainer(
         Screen.Home.route -> "Audit Karyatra"
         Screen.Stock.route -> "Stok Opname"
         Screen.Profile.route -> "Profil Pengguna"
-        Screen.ManageUsers.route -> "Manajemen Pengguna"
-        Screen.ManageDepartments.route -> "Manajemen Departemen"
+        Screen.ManageUsers.route -> "Kelola User"
+        Screen.ManageDepartments.route -> "Kelola Departemen"
+        Screen.AuditPertanyaan.route -> "Kategori & Pertanyaan"
+        Screen.AuditDepartemen.route -> "Pemetaan Departemen"
+        Screen.AuditProses.route + "?audit_id={audit_id}" -> "Audit Proses"
+        Screen.AuditHasil.route -> "Hasil Audit"
         else -> "Audit Karyatra"
     }
 
-    val isManageScreen = currentRoute == Screen.ManageUsers.route || currentRoute == Screen.ManageDepartments.route
+    val isTopLevelScreen = currentRoute == Screen.Home.route || 
+                           currentRoute == Screen.Stock.route || 
+                           currentRoute == Screen.Profile.route
+
+    val isChildScreen = !isTopLevelScreen && currentRoute != null
 
     Scaffold(
         topBar = {
             Header(
                 title = headerTitle,
-                onBack = if (isManageScreen) {
+                onBack = if (isChildScreen) {
                     { navController.popBackStack() }
                 } else null,
-                centerTitle = isManageScreen
+                centerTitle = isChildScreen
             )
         },
         bottomBar = {
-            if (!isManageScreen) {
+            if (isTopLevelScreen) {
                 BottomBar(navController = navController)
             }
         }
@@ -97,49 +106,5 @@ fun MainContainer(
             onLogout = onLogout,
             modifier = Modifier.padding(innerPadding)
         )
-    }
-}
-
-@Composable
-fun Header(
-    title: String,
-    onBack: (() -> Unit)? = null,
-    centerTitle: Boolean = false
-) {
-    Surface(
-        color = Color(0xFFB63352),
-        contentColor = Color.White
-    ) {
-        Row(
-            modifier = Modifier
-                .statusBarsPadding()
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (onBack != null) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
-                    )
-                }
-            } else {
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = if (onBack != null && centerTitle) 48.dp else 0.dp),
-                textAlign = if (centerTitle) TextAlign.Center else TextAlign.Start
-            )
-        }
     }
 }

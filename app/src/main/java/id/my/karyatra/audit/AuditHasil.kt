@@ -78,21 +78,6 @@ fun AuditHasilScreen(
     val backColor = MaterialTheme.colorScheme.background
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Hasil Audit", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = primaryColor,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        },
         containerColor = backColor
     ) { innerPadding ->
         Column(
