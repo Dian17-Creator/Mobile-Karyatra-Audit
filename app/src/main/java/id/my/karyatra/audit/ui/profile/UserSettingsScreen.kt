@@ -3,9 +3,11 @@ package id.my.karyatra.audit.ui.profile
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -16,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +47,7 @@ fun ManageUsersScreen(
     val uiState by viewModel.uiState.collectAsState()
     
     var showAddDialog by remember { mutableStateOf(false) }
+    var userToDelete by remember { mutableStateOf<UserData?>(null) }
     val primaryColor = Color(0xFFB63352)
 
     LaunchedEffect(Unit) {
@@ -90,7 +94,7 @@ fun ManageUsersScreen(
                                 currentUser?.id?.let { viewModel.updateUserLevel(it, user.id, level) }
                             },
                             onDelete = {
-                                currentUser?.id?.let { viewModel.deleteUser(it, user.id) }
+                                userToDelete = user
                             }
                         )
                     }
@@ -109,6 +113,71 @@ fun ManageUsersScreen(
             }
         )
     }
+
+    userToDelete?.let { user ->
+        DeleteConfirmDialog(
+            userName = user.name,
+            onDismiss = { userToDelete = null },
+            onConfirm = {
+                currentUser?.id?.let { viewModel.deleteUser(it, user.id) }
+                userToDelete = null
+            }
+        )
+    }
+}
+
+@Composable
+fun DeleteConfirmDialog(
+    userName: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    val primaryColor = Color(0xFFB63352)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(16.dp),
+        containerColor = Color.White,
+        title = {
+            Text(
+                text = "Hapus Pengguna",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.Black
+            )
+        },
+        text = {
+            Text(
+                text = "Apakah Anda yakin ingin menghapus pengguna \"$userName\"? Tindakan ini tidak dapat dibatalkan.",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+        },
+        confirmButton = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, primaryColor)
+                ) {
+                    Text("Batal", color = primaryColor, fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = onConfirm,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Hapus", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    )
 }
 
 @Composable
@@ -122,65 +191,139 @@ fun UserListItem(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.1f))
+        border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = user.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(text = user.email, color = Color.Gray, fontSize = 14.sp)
-                    Text(text = "Dibuat: ${user.created_at ?: "-"}", color = Color.Gray, fontSize = 12.sp)
-                }
-                
-                if (user.is_owner == true) {
-                    Surface(
-                        color = primaryColor.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
+                // Profile Initial Circle
+                Surface(
+                    modifier = Modifier.size(48.dp),
+                    shape = CircleShape,
+                    color = primaryColor.copy(alpha = 0.1f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
                         Text(
-                            text = "Pemilik",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = primaryColor
+                            text = user.name.take(1).uppercase(),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = primaryColor
+                            )
                         )
                     }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = user.name,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (user.is_owner == true) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                color = primaryColor.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = "Pemilik",
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = primaryColor
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    Text(text = user.email, color = Color.Gray, fontSize = 13.sp)
+                    Text(
+                        text = "Dibuat: ${user.created_at?.substringBefore(" ") ?: "-"}",
+                        color = Color.Gray.copy(alpha = 0.7f),
+                        fontSize = 11.sp
+                    )
                 }
             }
 
             if (user.is_owner != true) {
                 Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // Level Selector (Simple Row of Radio buttons or similar)
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                        RadioButton(selected = selectedLevel == "admin", onClick = { selectedLevel = "admin" })
-                        Text("Admin", fontSize = 12.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        RadioButton(selected = selectedLevel == "audit", onClick = { selectedLevel = "audit" })
-                        Text("Audit", fontSize = 12.sp)
+                    // Role Selector Buttons
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Button(
+                            onClick = { selectedLevel = "admin" },
+                            modifier = Modifier.weight(1f).height(36.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selectedLevel == "admin") primaryColor else Color.Transparent,
+                                contentColor = if (selectedLevel == "admin") Color.White else primaryColor
+                            ),
+                            border = if (selectedLevel == "admin") null else BorderStroke(1.dp, primaryColor)
+                        ) {
+                            Text("Admin", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        }
+
+                        Button(
+                            onClick = { selectedLevel = "audit" },
+                            modifier = Modifier.weight(1f).height(36.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selectedLevel == "audit") primaryColor else Color.Transparent,
+                                contentColor = if (selectedLevel == "audit") Color.White else primaryColor
+                            ),
+                            border = if (selectedLevel == "audit") null else BorderStroke(1.dp, primaryColor)
+                        ) {
+                            Text("Audit", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        }
                     }
 
+                    // Save Button
                     Button(
                         onClick = { onUpdateLevel(selectedLevel) },
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                        contentPadding = PaddingValues(horizontal = 10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                        modifier = Modifier.height(36.dp)
                     ) {
-                        Text("Simpan", fontSize = 12.sp)
+                        Text("Simpan", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.Red)
+                    // Delete Button (Matching exact button height)
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color.Red.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onDelete),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Hapus",
+                            tint = Color.Red,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }
@@ -205,6 +348,8 @@ fun AddUserDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(16.dp),
+        containerColor = Color.White,
         title = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -318,12 +463,13 @@ fun AddUserDialog(
         confirmButton = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                TextButton(
+                OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, primaryColor)
                 ) {
                     Text("Batal", color = primaryColor, fontWeight = FontWeight.Bold)
                 }
