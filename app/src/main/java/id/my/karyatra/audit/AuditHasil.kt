@@ -248,7 +248,7 @@ fun AuditHasilScreen(
             } else if (uiState.selectedDepartment == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Business, null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
+                        Icon(painter = painterResource(id = R.drawable.auditdept), null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Silakan pilih departemen terlebih dahulu", color = Color.Gray)
                     }

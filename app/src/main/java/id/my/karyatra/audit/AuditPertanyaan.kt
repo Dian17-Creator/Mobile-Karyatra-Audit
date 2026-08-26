@@ -171,7 +171,11 @@ fun AuditPertanyaanScreen(
                     .background(backColor)
                     .padding(innerPadding)
             ) {
-                if (uiState.categories.isEmpty() && !uiState.isLoading) {
+                if (uiState.isLoading && uiState.categories.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = primaryColor)
+                    }
+                } else if (uiState.categories.isEmpty()) {
                     EmptyState()
                 } else {
                     LazyColumn(
@@ -199,17 +203,6 @@ fun AuditPertanyaanScreen(
                                 onDelete = { viewModel.openDeleteDialog(category) }
                             )
                         }
-                    }
-                }
-
-                if (uiState.isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.05f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = primaryColor)
                     }
                 }
             }
