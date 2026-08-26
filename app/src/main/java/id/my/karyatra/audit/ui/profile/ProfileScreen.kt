@@ -129,12 +129,6 @@ fun ProfileScreen(onLogout: () -> Unit) {
                     label = "Email",
                     value = user?.email ?: "-"
                 )
-
-//                ProfileInfoRow(
-//                    painter = painterResource(id = R.drawable.auditdept),
-//                    label = "Departemen",
-//                    value = user?.department_name ?: "-"
-//                )
                 
                 ProfileInfoRow(
                     painter = painterResource(id = R.drawable.ic_company),

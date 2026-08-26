@@ -48,7 +48,11 @@ fun AuditHomeScreen(
     username: String,
     viewModel: HomeViewModel = viewModel(),
     onManageUsers: () -> Unit = {},
-    onManageDepartments: () -> Unit = {}
+    onManageDepartments: () -> Unit = {},
+    onKategoriPertanyaan: () -> Unit = {},
+    onPemetaanDepartemen: () -> Unit = {},
+    onAudit: (Int) -> Unit = {},
+    onHasilAudit: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -125,18 +129,18 @@ fun AuditHomeScreen(
         WelcomeCard(username = username)
 
         if (isOwner) {
-            HomeSectionTitle(title = "Manage user & department")
+            HomeSectionTitle(title = "Kelola User & Departemen")
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 MenuCard(
-                    menu = HomeMenu("Manage\nUser", R.drawable.ic_profile3),
+                    menu = HomeMenu("Kelola\nUser", R.drawable.ic_profile3),
                     modifier = Modifier.weight(1f),
                     onClick = { onManageUsers() }
                 )
                 MenuCard(
-                    menu = HomeMenu("Manage\nDepartment", R.drawable.auditdept),
+                    menu = HomeMenu("Kelola\nDepartemen", R.drawable.auditdept),
                     modifier = Modifier.weight(1f),
                     onClick = { onManageDepartments() }
                 )
@@ -153,19 +157,15 @@ fun AuditHomeScreen(
 
         MainMenuSection(menus = menus) { menuTitle ->
             when (menuTitle) {
-                "Kategori &\nPertanyaan" -> context.startActivity(Intent(context, AuditPertanyaan::class.java))
-                "Pemetaan\nDepartemen" -> context.startActivity(Intent(context, AuditDepartemen::class.java))
-                "Audit" -> context.startActivity(Intent(context, AuditProses::class.java))
-                "Hasil Audit" -> context.startActivity(Intent(context, AuditHasil::class.java))
+                "Kategori &\nPertanyaan" -> onKategoriPertanyaan()
+                "Pemetaan\nDepartemen" -> onPemetaanDepartemen()
+                "Audit" -> onAudit(-1)
+                "Hasil Audit" -> onHasilAudit()
             }
         }
 
         RecentActivitySection(activities = uiState.recentActivities) { activityId ->
-            context.startActivity(
-                Intent(context, AuditProses::class.java).apply {
-                    putExtra("audit_id", activityId)
-                }
-            )
+            onAudit(activityId)
         }
         
         Spacer(modifier = Modifier.height(12.dp))

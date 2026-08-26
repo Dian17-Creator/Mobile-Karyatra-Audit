@@ -154,26 +154,6 @@ fun AuditPertanyaanScreen(
                 .fillMaxSize()
                 .blur(if (isAnyDialogOpen) 16.dp else 0.dp), // Apply blur when dialog is open
             snackbarHost = { SnackbarHost(snackbarHostState) },
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "Kategori Audit",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = primaryColor,
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White
-                    )
-                )
-            },
             floatingActionButton = {
                 ExtendedFloatingActionButton(
                     onClick = { viewModel.openAddDialog() },

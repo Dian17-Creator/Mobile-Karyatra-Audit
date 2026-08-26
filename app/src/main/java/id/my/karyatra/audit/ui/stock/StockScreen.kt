@@ -68,7 +68,7 @@ fun StockScreen(
     ) {
 
         Text(
-            text = "Pilih menu untuk mengelola stock barang dan pemetaan departemen.",
+            text = "Pilih menu untuk mengelola stock barang and pemetaan departemen.",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray,
             modifier = Modifier.padding(bottom = 0.dp, start = 10.dp, end = 10.dp)

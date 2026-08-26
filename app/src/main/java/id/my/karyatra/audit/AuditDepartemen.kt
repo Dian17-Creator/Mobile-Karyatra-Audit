@@ -1,24 +1,16 @@
 package id.my.karyatra.audit
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -26,18 +18,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.my.karyatra.audit.data.DepartmentData
 import id.my.karyatra.audit.data.MappingCategory
 import id.my.karyatra.audit.data.viewmodel.AuditDepartmentViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
-import id.my.karyatra.audit.component.verticalScrollbar
-import id.my.karyatra.audit.component.verticalScrollbar
+import id.my.karyatra.audit.component.Header
 
 class AuditDepartemen : ComponentActivity() {
 
@@ -49,7 +42,6 @@ class AuditDepartemen : ComponentActivity() {
             Karyatra_AuditTheme {
                 AuditDepartemenScreen(
                     onBack = {
-                        startActivity(Intent(this, AuditHome::class.java))
                         finish()
                     }
                 )
@@ -91,26 +83,6 @@ fun AuditDepartemenScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Pemetaan Departemen",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = primaryColor,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        },
         bottomBar = {
             if (uiState.selectedDepartment != null) {
                 Surface(
@@ -159,47 +131,45 @@ fun AuditDepartemenScreen(
                     onClearAll = { viewModel.toggleAll(false) }
                 )
 
-                // Selection Counter
-                Text(
-                    text = "$totalDipilih dari $totalPertanyaan pertanyaan dipilih",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 12.dp, top = 6.dp)
-                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            Text(
+                                text = "$totalDipilih dari $totalPertanyaan pertanyaan dipilih",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
 
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(uiState.categories) { category ->
-                        CategoryMappingCard(
-                            category = category,
-                            selectedIds = uiState.selectedQuestionIds,
-                            onToggleQuestion = { viewModel.toggleQuestion(it) },
-                            onToggleCategory = { select -> viewModel.toggleCategory(category.id, select) }
+                        items(uiState.categories) { category ->
+                            CategoryMappingCard(
+                                category = category,
+                                selectedQuestionIds = uiState.selectedQuestionIds,
+                                onToggleQuestion = { viewModel.toggleQuestion(it) },
+                                onToggleCategory = { select -> viewModel.toggleCategory(category.id, select) }
+                            )
+                        }
+                        
+                        item { Spacer(modifier = Modifier.height(80.dp)) }
+                    }
+
+                    if (uiState.isLoading && !uiState.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = primaryColor
                         )
                     }
-
-                    item {
-                        Spacer(modifier = Modifier.height(0.dp))
-                    }
                 }
-            }
-        }
-
-        if (uiState.isLoading && !uiState.isSaving) {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.05f)), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = primaryColor)
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DepartmentSelector(
     departments: List<DepartmentData>,
@@ -207,66 +177,74 @@ fun DepartmentSelector(
     onSelect: (DepartmentData) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val brandColor = Color(0xFFB63352)
+    val primaryColor = Color(0xFFB63352)
 
-    Box(modifier = Modifier.padding(16.dp)) {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
-            OutlinedTextField(
-                value = selectedDepartment?.name ?: "Pilih Departemen",
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Departemen") },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.auditdept),
-                        contentDescription = null,
-                        tint = brandColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = brandColor,
-                    focusedLabelColor = brandColor,
-                    unfocusedLabelColor = Color.Gray,
-                    unfocusedBorderColor = Color.LightGray,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                )
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, if (selectedDepartment != null) primaryColor.copy(alpha = 0.5f) else Color.LightGray.copy(alpha = 0.5f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Pilih Departemen",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray
             )
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.background(Color.White)
-            ) {
-                val scrollState = rememberScrollState()
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 250.dp)
-                        .verticalScrollbar(scrollState)
-                        .verticalScroll(scrollState)
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Box {
+                OutlinedCard(
+                    onClick = { expanded = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
                 ) {
-                    departments.forEach { department ->
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            Icon(
+                                imageVector = Icons.Default.Business,
+                                contentDescription = null,
+                                tint = if (selectedDepartment != null) primaryColor else Color.Gray
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = selectedDepartment?.name ?: "Pilih Departemen...",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (selectedDepartment != null) Color.Black else Color.Gray
+                            )
+                        }
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = Color.Gray
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .background(Color.White)
+                ) {
+                    departments.forEach { dept ->
                         DropdownMenuItem(
-                            text = { 
-                                Text(
-                                    text = department.name ?: "",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
-                            },
+                            text = { Text(dept.name ?: "") },
                             onClick = {
-                                onSelect(department)
+                                onSelect(dept)
                                 expanded = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Business, contentDescription = null, tint = primaryColor)
                             }
                         )
                     }
@@ -277,28 +255,38 @@ fun DepartmentSelector(
 }
 
 @Composable
-fun BulkActionsBar(onSelectAll: () -> Unit, onClearAll: () -> Unit) {
+fun BulkActionsBar(
+    onSelectAll: () -> Unit,
+    onClearAll: () -> Unit
+) {
+    val primaryColor = Color(0xFFB63352)
+    
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         OutlinedButton(
             onClick = onSelectAll,
             modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.5f))
         ) {
-            Icon(painterResource(id = R.drawable.selectall), contentDescription = null, modifier = Modifier.size(14.dp))
+            Icon(Icons.Default.SelectAll, contentDescription = null, modifier = Modifier.size(18.dp), tint = primaryColor)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Pilih Semua", fontSize = 12.sp)
+            Text("Pilih Semua", fontSize = 12.sp, color = primaryColor)
         }
+
         OutlinedButton(
             onClick = onClearAll,
             modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
         ) {
-            Icon(painterResource(id = R.drawable.trash), contentDescription = null, modifier = Modifier.size(14.dp))
+            Icon(Icons.Default.ClearAll, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.Gray)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Hapus Semua", fontSize = 12.sp)
+            Text("Bersihkan", fontSize = 12.sp, color = Color.Gray)
         }
     }
 }
@@ -306,60 +294,83 @@ fun BulkActionsBar(onSelectAll: () -> Unit, onClearAll: () -> Unit) {
 @Composable
 fun CategoryMappingCard(
     category: MappingCategory,
-    selectedIds: Set<Int>,
+    selectedQuestionIds: Set<Int>,
     onToggleQuestion: (Int) -> Unit,
     onToggleCategory: (Boolean) -> Unit
 ) {
-    val allSelected = category.questions.all { selectedIds.contains(it.id) }
+    var expanded by remember { mutableStateOf(false) }
+    val primaryColor = Color(0xFFB63352)
     
+    val allSelected = category.questions.all { it.id in selectedQuestionIds }
+    val someSelected = category.questions.any { it.id in selectedQuestionIds }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, if (someSelected) primaryColor.copy(alpha = 0.2f) else Color.LightGray.copy(alpha = 0.3f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = category.name ?: "",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFFB63352)
+                Checkbox(
+                    checked = allSelected,
+                    onCheckedChange = { onToggleCategory(it) },
+                    colors = CheckboxDefaults.colors(checkedColor = primaryColor)
                 )
                 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { onToggleCategory(true) }) {
-                        Text("Pilih", fontSize = 12.sp)
-                    }
-                    TextButton(onClick = { onToggleCategory(false) }) {
-                        Text("Hapus", fontSize = 12.sp, color = Color.Gray)
-                    }
-                }
-            }
-            
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray.copy(alpha = 0.5f))
-            
-            category.questions.forEach { question ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onToggleQuestion(question.id) }
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = selectedIds.contains(question.id),
-                        onCheckedChange = { onToggleQuestion(question.id) }
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = category.name ?: "",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (someSelected) primaryColor else Color.Black
                     )
                     Text(
-                        text = question.question ?: "",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 8.dp)
+                        text = "${category.questions.size} Pertanyaan",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
                     )
+                }
+
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = Color.Gray
+                )
+            }
+
+            if (expanded) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                    category.questions.forEach { question ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onToggleQuestion(question.id) }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = question.id in selectedQuestionIds,
+                                onCheckedChange = { onToggleQuestion(question.id) },
+                                colors = CheckboxDefaults.colors(checkedColor = primaryColor)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = question.question ?: "",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (question.id in selectedQuestionIds) Color.Black else Color.DarkGray
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -369,20 +380,28 @@ fun CategoryMappingCard(
 @Composable
 fun EmptyMappingState() {
     Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            imageVector = Icons.Default.BusinessCenter,
+            imageVector = Icons.Default.AssignmentInd,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
-            tint = Color.LightGray
+            tint = Color.LightGray.copy(alpha = 0.5f)
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Pilih departemen untuk memulai pemetaan",
-            style = MaterialTheme.typography.titleMedium,
+            text = "Belum Ada Departemen Dipilih",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = Color.Black
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Pilih departemen di atas untuk mulai memetakan pertanyaan audit yang sesuai.",
+            style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray,
             textAlign = TextAlign.Center
         )
