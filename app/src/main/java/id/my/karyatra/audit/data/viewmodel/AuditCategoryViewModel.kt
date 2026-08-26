@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AuditCategoryUiState(
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val categories: List<CategoryData> = emptyList(),
     val selectedCategory: CategoryData? = null,
     val isAddDialogOpen: Boolean = false,
