@@ -50,10 +50,9 @@ class DepartmentViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun addDepartment(ownerId: Int, name: String) {
-        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.addDepartment(user.id, DepartmentRequest(ownerId, name))
+            val result = repository.addDepartment(ownerId, DepartmentRequest(ownerId, name))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -71,10 +70,9 @@ class DepartmentViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun updateDepartment(ownerId: Int, departmentId: Int, name: String) {
-        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.updateDepartment(user.id, departmentId, DepartmentRequest(ownerId, name))
+            val result = repository.updateDepartment(ownerId, departmentId, DepartmentRequest(ownerId, name))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -92,10 +90,9 @@ class DepartmentViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun deleteDepartment(ownerId: Int, departmentId: Int) {
-        val user = sessionManager.getUser() ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = repository.deleteDepartment(user.id, departmentId, DeleteDepartmentRequest(ownerId))
+            val result = repository.deleteDepartment(ownerId, departmentId, DeleteDepartmentRequest(ownerId))
             when (result) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
