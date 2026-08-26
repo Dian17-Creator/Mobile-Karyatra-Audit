@@ -17,7 +17,6 @@ import androidx.navigation.compose.composable
 import id.my.karyatra.audit.ui.home.AuditHomeScreen
 import id.my.karyatra.audit.ui.profile.ProfileScreen
 import id.my.karyatra.audit.ui.stock.StockScreen
-import id.my.karyatra.audit.ui.stock.StockScreen
 
 import id.my.karyatra.audit.ui.profile.ManageUsersScreen
 import id.my.karyatra.audit.ui.profile.ManageDepartmentsScreen
@@ -47,14 +46,46 @@ fun MainNavigation(
     username: String,
     onLogout: () -> Unit
 ) {
+    val mainTabs = listOf(Screen.Home.route, Screen.Stock.route, Screen.Profile.route)
+
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route,
         modifier = modifier,
-        enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn(animationSpec = tween(300)) },
-        exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut(animationSpec = tween(300)) },
-        popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn(animationSpec = tween(300)) },
-        popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut(animationSpec = tween(300)) }
+        enterTransition = {
+            val fromIndex = mainTabs.indexOf(initialState.destination.route)
+            val toIndex = mainTabs.indexOf(targetState.destination.route)
+            
+            if (fromIndex != -1 && toIndex != -1 && fromIndex != toIndex) {
+                if (toIndex > fromIndex) {
+                    slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) + fadeIn()
+                } else {
+                    slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)) + fadeIn()
+                }
+            } else {
+                slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) + fadeIn()
+            }
+        },
+        exitTransition = {
+            val fromIndex = mainTabs.indexOf(initialState.destination.route)
+            val toIndex = mainTabs.indexOf(targetState.destination.route)
+
+            if (fromIndex != -1 && toIndex != -1 && fromIndex != toIndex) {
+                if (toIndex > fromIndex) {
+                    slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300)) + fadeOut()
+                } else {
+                    slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + fadeOut()
+                }
+            } else {
+                slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300)) + fadeOut()
+            }
+        },
+        popEnterTransition = {
+            slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)) + fadeIn()
+        },
+        popExitTransition = {
+            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + fadeOut()
+        }
     ) {
         composable(Screen.Home.route) {
             AuditHomeScreen(
