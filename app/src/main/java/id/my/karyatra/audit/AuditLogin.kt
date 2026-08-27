@@ -26,14 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -233,18 +230,23 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                val annotatedString = buildAnnotatedString {
-                    append("Belum punya akun? ")
-                    withStyle(style = SpanStyle(color = primaryColor, fontWeight = FontWeight.Bold)) {
-                        append("Daftar")
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Belum punya akun? ",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "DAFTAR",
+                        modifier = Modifier.clickable { onNavigateToRegister() },
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = primaryColor,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    )
                 }
-
-                Text(
-                    text = annotatedString,
-                    modifier = Modifier.clickable { onNavigateToRegister() },
-                    style = MaterialTheme.typography.bodyMedium
-                )
             }
         }
     }
