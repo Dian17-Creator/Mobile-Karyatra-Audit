@@ -1,6 +1,7 @@
 package id.my.karyatra.audit.data
 
 import id.my.karyatra.audit.data.ApiService
+import id.my.karyatra.audit.data.api.SubscriptionApiService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -29,5 +30,14 @@ object RetrofitClientLaravel {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
+    }
+
+    val subscriptionInstance: SubscriptionApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(SubscriptionApiService::class.java)
     }
 }

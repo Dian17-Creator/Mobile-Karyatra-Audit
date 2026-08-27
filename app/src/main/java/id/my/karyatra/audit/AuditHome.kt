@@ -75,6 +75,7 @@ fun MainContainer(
         Screen.AuditDepartemen.route -> "Pemetaan Departemen"
         Screen.AuditProses.route + "?audit_id={audit_id}" -> "Audit Proses"
         Screen.AuditHasil.route -> "Hasil Audit"
+        Screen.Subscription.route -> "Paket Berlangganan"
         else -> "Audit Karyatra"
     }
 

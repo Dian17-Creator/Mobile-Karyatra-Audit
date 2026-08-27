@@ -37,6 +37,8 @@ import android.widget.Toast
 import id.my.karyatra.audit.data.SessionManager
 import id.my.karyatra.audit.data.RecentActivityData
 import id.my.karyatra.audit.data.viewmodel.HomeViewModel
+import id.my.karyatra.audit.data.viewmodel.SubscriptionViewModel
+import id.my.karyatra.audit.component.UiUtils
 
 data class HomeMenu(
     val title: String,
@@ -47,12 +49,14 @@ data class HomeMenu(
 fun AuditHomeScreen(
     username: String,
     viewModel: HomeViewModel = viewModel(),
+    subViewModel: SubscriptionViewModel = viewModel(),
     onManageUsers: () -> Unit = {},
     onManageDepartments: () -> Unit = {},
     onKategoriPertanyaan: () -> Unit = {},
     onPemetaanDepartemen: () -> Unit = {},
     onAudit: (Int) -> Unit = {},
-    onHasilAudit: () -> Unit = {}
+    onHasilAudit: () -> Unit = {},
+    onSubscription: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -62,10 +66,12 @@ fun AuditHomeScreen(
     val isOwner = remember { user?.is_owner ?: false }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val subState by subViewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     val snackbarHostState = remember { SnackbarHostState() }
     
     val primaryColor = Color(0xFFB63352)
+    var showGatingDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
@@ -88,6 +94,7 @@ fun AuditHomeScreen(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.fetchDashboardSummary()
+                subViewModel.fetchSubscriptionState()
                 if (userId != -1) {
                     viewModel.startVerificationCheck(userId)
                 }
@@ -126,7 +133,32 @@ fun AuditHomeScreen(
             }
         }
 
-        WelcomeCard(username = username)
+        subState.subscriptionState?.let { state ->
+            if (state.isUpgradePending) {
+                InfoBanner(
+                    message = "Pengajuan Pro Anda sedang dalam verifikasi tim Finance",
+                    containerColor = Color(0xFFE3F2FD),
+                    contentColor = Color(0xFF0D47A1),
+                    icon = Icons.Default.Pending
+                )
+            } else if (state.isRejectionVisible) {
+                InfoBanner(
+                    message = "Pengajuan sebelumnya ditolak. Silakan ajukan ulang.",
+                    containerColor = Color(0xFFFFEBEE),
+                    contentColor = Color(0xFFB71C1C),
+                    icon = Icons.Default.Error
+                )
+            } else if (!state.isPro()) {
+                TryProBanner(onClick = onSubscription)
+            }
+        }
+
+        WelcomeCard(
+            username = username,
+            plan = subState.subscriptionState?.plan ?: "Free",
+            validUntil = subState.subscriptionState?.proUntil,
+            onPlanClick = onSubscription
+        )
 
         if (isOwner) {
             HomeSectionTitle(title = "Kelola User & Departemen")
@@ -159,7 +191,14 @@ fun AuditHomeScreen(
             when (menuTitle) {
                 "Kategori &\nPertanyaan" -> onKategoriPertanyaan()
                 "Pemetaan\nDepartemen" -> onPemetaanDepartemen()
-                "Audit" -> onAudit(-1)
+                "Audit" -> {
+                    val sub = subState.subscriptionState
+                    if (sub?.isFree() == true && uiState.totalAudit.toIntOrNull() ?: 0 >= 1) {
+                        showGatingDialog = true
+                    } else {
+                        onAudit(-1)
+                    }
+                }
                 "Hasil Audit" -> onHasilAudit()
             }
         }
@@ -169,6 +208,31 @@ fun AuditHomeScreen(
         }
         
         Spacer(modifier = Modifier.height(12.dp))
+    }
+
+    if (showGatingDialog) {
+        AlertDialog(
+            onDismissRequest = { showGatingDialog = false },
+            title = { Text("Limit Dokumen Tercapai", fontWeight = FontWeight.Bold) },
+            text = { Text("Paket FREE hanya dapat membuat 1 dokumen audit. Silakan upgrade ke PRO untuk akses tak terbatas.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showGatingDialog = false
+                        onSubscription()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                ) {
+                    Text("Upgrade PRO")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGatingDialog = false }) {
+                    Text("Nanti Saja")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 }
 
@@ -201,13 +265,14 @@ fun HomeSectionTitle(title: String) {
 }
 
 @Composable
-fun WelcomeCard(username: String) {
+fun WelcomeCard(username: String, plan: String, validUntil: String? = null, onPlanClick: () -> Unit = {}) {
+    val primaryColor = Color(0xFFB63352)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier
@@ -217,11 +282,30 @@ fun WelcomeCard(username: String) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Selamat Datang,",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Selamat Datang,",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        color = when(plan.lowercase()) {
+                            "pro" -> Color(0xFFFFD700)
+                            "trial" -> Color(0xFF64B5F6)
+                            else -> Color(0xFFE0E0E0)
+                        },
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.clickable { onPlanClick() }
+                    ) {
+                        Text(
+                            text = plan.uppercase(),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                            color = if (plan.lowercase() == "pro") Color.Black else Color.White
+                        )
+                    }
+                }
                 Text(
                     text = username,
                     style = MaterialTheme.typography.headlineSmall.copy(
@@ -229,6 +313,13 @@ fun WelcomeCard(username: String) {
                     ),
                     color = Color.Black
                 )
+                if (plan.lowercase() == "pro" && validUntil != null) {
+                    Text(
+                        text = "Pro aktif hingga: ${UiUtils.formatDateIndo(validUntil)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = primaryColor
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Semoga aktivitas audit hari ini berjalan lancar.",
@@ -526,24 +617,12 @@ fun VerificationBanner(
     isResending: Boolean,
     onResend: () -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFFFFF3E0),
-        border = BorderStroke(1.dp, Color(0xFFFFB74D)),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(Icons.Default.Info, null, tint = Color(0xFFE65100))
-            Text(
-                text = "Email belum diverifikasi. Silakan cek inbox Anda.",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFE65100)
-            )
+    InfoBanner(
+        message = "Email belum diverifikasi. Silakan cek inbox Anda.",
+        containerColor = Color(0xFFFFF3E0),
+        contentColor = Color(0xFFE65100),
+        icon = Icons.Default.Info,
+        action = {
             TextButton(
                 onClick = onResend,
                 enabled = !isResending
@@ -554,6 +633,77 @@ fun VerificationBanner(
                     Text("Kirim Ulang", fontWeight = FontWeight.Bold, color = Color(0xFFE65100))
                 }
             }
+        }
+    )
+}
+
+@Composable
+fun InfoBanner(
+    message: String,
+    containerColor: Color,
+    contentColor: Color,
+    icon: ImageVector,
+    action: (@Composable () -> Unit)? = null
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = containerColor,
+        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(icon, null, tint = contentColor)
+            Text(
+                text = message,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor
+            )
+            action?.invoke()
+        }
+    }
+}
+
+@Composable
+fun TryProBanner(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFD700).copy(alpha = 0.15f)),
+        border = BorderStroke(1.dp, Color(0xFFFFD700))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(Color(0xFFFFD700), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Star, null, tint = Color.Black)
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Coba Fitur Pro!",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
+                )
+                Text(
+                    text = "Export PDF, Kirim Email, dan Foto tak terbatas.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.DarkGray
+                )
+            }
+            Icon(Icons.Default.ChevronRight, null, tint = Color.Black)
         }
     }
 }

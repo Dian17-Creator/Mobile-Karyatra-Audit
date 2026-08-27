@@ -41,6 +41,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.res.painterResource
 import id.my.karyatra.audit.data.*
 import id.my.karyatra.audit.data.viewmodel.AuditHasilViewModel
+import id.my.karyatra.audit.data.viewmodel.SubscriptionViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
 import id.my.karyatra.audit.component.UiUtils
 import id.my.karyatra.audit.component.verticalScrollbar
@@ -70,12 +71,17 @@ class AuditHasil : ComponentActivity() {
 @Composable
 fun AuditHasilScreen(
     viewModel: AuditHasilViewModel = viewModel(),
+    subViewModel: SubscriptionViewModel = viewModel(),
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val primaryColor = Color(0xFFB63352)
     val backColor = MaterialTheme.colorScheme.background
+
+    LaunchedEffect(Unit) {
+        subViewModel.fetchSubscriptionState()
+    }
 
     Scaffold(
         containerColor = backColor
@@ -280,6 +286,7 @@ fun AuditHasilScreen(
         AuditReportDetailDialog(
             detail = detail,
             viewModel = viewModel,
+            subViewModel = subViewModel,
             onDismiss = { viewModel.clearDetail() }
         )
     }
@@ -397,13 +404,34 @@ fun AuditDocumentItem(
 fun AuditReportDetailDialog(
     detail: AuditDetailContainer,
     viewModel: AuditHasilViewModel = viewModel(),
+    subViewModel: SubscriptionViewModel = viewModel(),
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val audit = detail.audit
     val primaryColor = Color(0xFFB63352)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val subState by subViewModel.uiState.collectAsStateWithLifecycle()
+    
     var showEmailDialog by remember { mutableStateOf(false) }
+    var showUpgradeRequiredDialog by remember { mutableStateOf(false) }
+
+    if (showUpgradeRequiredDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpgradeRequiredDialog = false },
+            title = { Text("Fitur Khusus Pro", fontWeight = FontWeight.Bold) },
+            text = { Text("Fitur kirim email dan cetak PDF hanya tersedia untuk paket FREE dan PRO. Akun TRIAL tidak memiliki akses ke fitur ini.") },
+            confirmButton = {
+                Button(
+                    onClick = { showUpgradeRequiredDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                ) {
+                    Text("Mengerti")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
 
     if (showEmailDialog) {
         AuditSendEmailDialog(
@@ -429,13 +457,23 @@ fun AuditReportDetailDialog(
                     title = { Text(audit.documentId ?: "", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
                     navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
                     actions = {
-                        IconButton(onClick = { showEmailDialog = true }) {
+                        IconButton(onClick = { 
+                            if (subState.subscriptionState?.canExport() == false) {
+                                showUpgradeRequiredDialog = true
+                            } else {
+                                showEmailDialog = true 
+                            }
+                        }) {
                             Icon(Icons.Default.Email, contentDescription = "Send Email")
                         }
                         IconButton(onClick = {
-                            val url = "https://audit-laravel.karyatra.cloud/api/audits/${audit.id}/export-pdf"
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                            context.startActivity(intent)
+                            if (subState.subscriptionState?.canExport() == false) {
+                                showUpgradeRequiredDialog = true
+                            } else {
+                                val url = "https://audit-laravel.karyatra.cloud/api/audits/${audit.id}/export-pdf"
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                context.startActivity(intent)
+                            }
                         }) {
                             Icon(Icons.Default.Print, contentDescription = "Download PDF")
                         }
