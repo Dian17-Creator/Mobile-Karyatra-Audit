@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -37,26 +38,41 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.my.karyatra.audit.data.viewmodel.UserViewModel
+import id.my.karyatra.audit.data.viewmodel.SubscriptionViewModel
+import id.my.karyatra.audit.component.UiUtils
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WorkspacePremium
 
 @Composable
-fun ProfileScreen(onLogout: () -> Unit) {
+fun ProfileScreen(
+    onLogout: () -> Unit,
+    onUpgrade: () -> Unit,
+    subViewModel: SubscriptionViewModel = viewModel()
+) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     var user by remember { mutableStateOf(sessionManager.getUser()) }
     val userViewModel: UserViewModel = viewModel()
+    val subState by subViewModel.uiState.collectAsStateWithLifecycle()
     
     var showEditDialog by remember { mutableStateOf(false) }
     
     val primaryColor = Color(0xFFB63352)
     val backgroundColor = MaterialTheme.colorScheme.background
 
-    // Refresh user data when dialog closes or session updates
+    // Refresh user data and subscription state when dialog closes or session updates
     LaunchedEffect(showEditDialog) {
         if (!showEditDialog) {
             user = sessionManager.getUser()
+            subViewModel.fetchSubscriptionState()
         }
+    }
+
+    LaunchedEffect(Unit) {
+        subViewModel.fetchSubscriptionState()
     }
 
     Column(
@@ -86,11 +102,32 @@ fun ProfileScreen(onLogout: () -> Unit) {
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = user?.name ?: "User",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = Color.Black
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = user?.name ?: "User",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
+                )
+                
+                subState.subscriptionState?.let { state ->
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        color = when(state.plan.lowercase()) {
+                            "pro" -> Color(0xFFFFD700)
+                            "trial" -> Color(0xFF64B5F6)
+                            else -> Color(0xFFE0E0E0)
+                        },
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = state.plan.uppercase(),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                            color = if (state.plan.lowercase() == "pro") Color.Black else Color.White
+                        )
+                    }
+                }
+            }
             user?.email?.let {
                 Text(
                     text = it,
@@ -135,7 +172,24 @@ fun ProfileScreen(onLogout: () -> Unit) {
                     label = "Perusahaan",
                     value = user?.company ?: "-"
                 )
+
+                subState.subscriptionState?.let { state ->
+                    ProfileInfoRow(
+                        painter = painterResource(id = R.drawable.ic_plan),
+                        label = "Paket Saat Ini",
+                        value = state.plan.uppercase()
+                    )
+                    if (state.plan.lowercase() == "pro" && state.proUntil != null) {
+                        ProfileInfoRow(
+                            painter = painterResource(id = R.drawable.ic_date),
+                            label = "Berlaku Hingga",
+                            value = UiUtils.formatDateIndo(state.proUntil)
+                        )
+                    }
+                }
                 
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Edit Profile Button
                 OutlinedButton(
                     onClick = { showEditDialog = true },
@@ -146,6 +200,19 @@ fun ProfileScreen(onLogout: () -> Unit) {
                     Icon(Icons.Default.Edit, contentDescription = null, tint = primaryColor)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Edit Akun", color = primaryColor, fontWeight = FontWeight.Bold)
+                }
+
+                if (user?.is_owner == true && subState.subscriptionState?.isPro() == false) {
+                    Button(
+                        onClick = onUpgrade,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))
+                    ) {
+                        Icon(Icons.Default.Star, contentDescription = null, tint = Color.Black)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Upgrade ke PRO", color = Color.Black, fontWeight = FontWeight.ExtraBold)
+                    }
                 }
             }
         }

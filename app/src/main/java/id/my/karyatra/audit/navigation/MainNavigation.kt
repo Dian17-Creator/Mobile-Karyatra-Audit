@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -20,6 +21,7 @@ import id.my.karyatra.audit.ui.stock.StockScreen
 
 import id.my.karyatra.audit.ui.profile.ManageUsersScreen
 import id.my.karyatra.audit.ui.profile.ManageDepartmentsScreen
+import id.my.karyatra.audit.ui.subscription.SubscriptionScreen
 import id.my.karyatra.audit.AuditPertanyaanScreen
 import id.my.karyatra.audit.AuditDepartemenScreen
 import id.my.karyatra.audit.AuditExecutionScreen
@@ -37,6 +39,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object AuditDepartemen : Screen("audit_departemen", "Pemetaan Departemen", Icons.Default.Settings)
     object AuditProses : Screen("audit_proses", "Audit", Icons.Default.Settings)
     object AuditHasil : Screen("audit_hasil", "Hasil Audit", Icons.Default.Settings)
+    object Subscription : Screen("subscription", "Berlangganan", Icons.Default.WorkspacePremium)
 }
 
 @Composable
@@ -97,14 +100,18 @@ fun MainNavigation(
                 onAudit = { auditId -> 
                     navController.navigate(Screen.AuditProses.route + "?audit_id=$auditId") 
                 },
-                onHasilAudit = { navController.navigate(Screen.AuditHasil.route) }
+                onHasilAudit = { navController.navigate(Screen.AuditHasil.route) },
+                onSubscription = { navController.navigate(Screen.Subscription.route) }
             )
         }
         composable(Screen.Stock.route) {
             StockScreen(navController = navController)
         }
         composable(Screen.Profile.route) {
-            ProfileScreen(onLogout = onLogout)
+            ProfileScreen(
+                onLogout = onLogout,
+                onUpgrade = { navController.navigate(Screen.Subscription.route) }
+            )
         }
         composable(Screen.ManageUsers.route) {
             ManageUsersScreen(onBack = { navController.popBackStack() })
@@ -130,6 +137,9 @@ fun MainNavigation(
         }
         composable(Screen.AuditHasil.route) {
             AuditHasilScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Screen.Subscription.route) {
+            SubscriptionScreen(onBack = { navController.popBackStack() })
         }
     }
 }

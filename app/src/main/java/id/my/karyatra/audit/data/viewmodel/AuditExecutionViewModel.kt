@@ -37,6 +37,7 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     private val executionRepository: AuditExecutionRepository = AuditExecutionRepository()
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
     private val dashboardRepository: DashboardRepository = DashboardRepository(application)
+    private val subscriptionRepository: id.my.karyatra.audit.data.repository.SubscriptionRepository = id.my.karyatra.audit.data.repository.SubscriptionRepository()
     private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(AuditExecutionUiState())
@@ -217,8 +218,28 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     fun uploadPhoto(responseId: Int, photoFile: File) {
         val user = sessionManager.getUser() ?: return
         val auditId = _uiState.value.auditDetail?.audit?.id ?: return
+        
         viewModelScope.launch {
             _uiState.update { it.copy(isUploading = true) }
+            
+            // Check Subscription Limit
+            val subState = when (val res = subscriptionRepository.getSubscriptionState(user.id)) {
+                is ApiResult.Success -> res.data.data
+                else -> null
+            }
+            
+            val currentPhotoCount = _uiState.value.auditDetail?.categories
+                ?.flatMap { it.questions }
+                ?.find { it.response?.id == responseId }
+                ?.photos?.size ?: 0
+                
+            val maxPhotos = subState?.getMaxPhotos(isOpname = false) ?: 1
+            
+            if (currentPhotoCount >= maxPhotos) {
+                _uiState.update { it.copy(isUploading = false, errorMessage = "Limit foto tercapai ($maxPhotos foto). Silakan upgrade paket.") }
+                return@launch
+            }
+
             when (val result = executionRepository.uploadPhoto(user.id, auditId, responseId, photoFile)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isUploading = false) }
