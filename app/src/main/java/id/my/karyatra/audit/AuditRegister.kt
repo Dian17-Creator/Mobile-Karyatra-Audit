@@ -24,12 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -233,18 +229,23 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                val annotatedString = buildAnnotatedString {
-                    append("Sudah punya akun? ")
-                    withStyle(style = SpanStyle(color = primaryColor, fontWeight = FontWeight.Bold)) {
-                        append("Masuk")
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Sudah punya akun? ",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "MASUK",
+                        modifier = Modifier.clickable { onNavigateToLogin() },
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = primaryColor,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    )
                 }
-
-                Text(
-                    text = annotatedString,
-                    modifier = Modifier.clickable { onNavigateToLogin() },
-                    style = MaterialTheme.typography.bodyMedium
-                )
                 
                 Spacer(modifier = Modifier.height(48.dp))
             }
