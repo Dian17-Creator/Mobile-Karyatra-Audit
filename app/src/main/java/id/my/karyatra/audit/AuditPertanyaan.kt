@@ -216,7 +216,10 @@ fun AuditPertanyaanScreen(
             AddEditCategoryDialogContent(
                 title = "Tambah Kategori",
                 onDismiss = { viewModel.closeAddDialog() },
-                onConfirm = { name, desc -> viewModel.addCategory(name, desc) }
+                onConfirm = { name, desc ->
+                    viewModel.closeAddDialog()
+                    viewModel.addCategory(name, desc)
+                }
             )
         }
 
@@ -230,7 +233,9 @@ fun AuditPertanyaanScreen(
                 initialDesc = uiState.selectedCategory?.description ?: "",
                 onDismiss = { viewModel.closeEditDialog() },
                 onConfirm = { name, desc ->
-                    uiState.selectedCategory?.id?.let { id ->
+                    val selectedId = uiState.selectedCategory?.id
+                    viewModel.closeEditDialog()
+                    selectedId?.let { id ->
                         viewModel.updateCategory(id, name, desc)
                     }
                 }

@@ -72,6 +72,7 @@ class AuditQuestionViewModel(application: Application) : AndroidViewModel(applic
 
     fun addQuestion(categoryId: Int, questionText: String) {
         val user = sessionManager.getUser() ?: return
+        _uiState.update { it.copy(isAddDialogOpen = false) }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = QuestionRequest(categoryId = categoryId, question = questionText)
@@ -93,6 +94,7 @@ class AuditQuestionViewModel(application: Application) : AndroidViewModel(applic
 
     fun updateQuestion(categoryId: Int, id: Int, questionText: String) {
         val user = sessionManager.getUser() ?: return
+        _uiState.update { it.copy(isEditDialogOpen = false, selectedQuestion = null) }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = QuestionRequest(question = questionText)

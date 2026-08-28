@@ -76,6 +76,7 @@ class AuditCategoryViewModel(application: Application) : AndroidViewModel(applic
 
     fun addCategory(name: String, description: String?) {
         val user = sessionManager.getUser() ?: return
+        _uiState.update { it.copy(isAddDialogOpen = false) }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = CategoryRequest(name, description)
@@ -98,6 +99,7 @@ class AuditCategoryViewModel(application: Application) : AndroidViewModel(applic
 
     fun updateCategory(id: Int, name: String, description: String?) {
         val user = sessionManager.getUser() ?: return
+        _uiState.update { it.copy(isEditDialogOpen = false, selectedCategory = null) }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = CategoryRequest(name, description)
