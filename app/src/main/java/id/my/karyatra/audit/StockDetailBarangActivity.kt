@@ -175,7 +175,10 @@ fun StockDetailBarangScreen(
             AddEditBarangDialogContent(
                 title = "Tambah Barang",
                 onDismiss = { viewModel.closeAddDialog() },
-                onConfirm = { name -> viewModel.addItem(categoryId, name) }
+                onConfirm = { name ->
+                    viewModel.closeAddDialog()
+                    viewModel.addItem(categoryId, name)
+                }
             )
         }
 
@@ -185,7 +188,7 @@ fun StockDetailBarangScreen(
                 initialName = uiState.selectedItem?.name ?: "",
                 onDismiss = { viewModel.closeEditDialog() },
                 onConfirm = { name ->
-                    // Edit not implemented yet
+                    viewModel.closeEditDialog()
                 }
             )
         }

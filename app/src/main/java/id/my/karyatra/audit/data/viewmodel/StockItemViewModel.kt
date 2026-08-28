@@ -86,6 +86,7 @@ class StockItemViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun addItem(categoryId: Int, itemName: String) {
         val user = sessionManager.getUser() ?: return
+        _uiState.update { it.copy(isAddDialogOpen = false) }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val request = StockItemRequest(categoryId = categoryId, name = itemName)

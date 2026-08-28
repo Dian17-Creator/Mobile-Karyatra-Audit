@@ -229,7 +229,7 @@ fun DepartmentDialog(
                         value = name,
                         onValueChange = { name = it },
                         label = { Text("Nama Departemen") },
-                        placeholder = { Text("Masukkan nama departemen") },
+//                        placeholder = { Text("Masukkan nama departemen") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         singleLine = true,

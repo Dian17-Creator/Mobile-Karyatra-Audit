@@ -187,7 +187,10 @@ fun AuditDetailPertanyaanScreen(
             AddEditQuestionDialogContent(
                 title = "Tambah Pertanyaan",
                 onDismiss = { viewModel.closeAddDialog() },
-                onConfirm = { text -> viewModel.addQuestion(categoryId, text) }
+                onConfirm = { text ->
+                    viewModel.closeAddDialog()
+                    viewModel.addQuestion(categoryId, text)
+                }
             )
         }
 
@@ -197,7 +200,9 @@ fun AuditDetailPertanyaanScreen(
                 initialText = uiState.selectedQuestion?.question ?: "",
                 onDismiss = { viewModel.closeEditDialog() },
                 onConfirm = { text ->
-                    uiState.selectedQuestion?.id?.let { id ->
+                    val selectedId = uiState.selectedQuestion?.id
+                    viewModel.closeEditDialog()
+                    selectedId?.let { id ->
                         viewModel.updateQuestion(categoryId, id, text)
                     }
                 }
