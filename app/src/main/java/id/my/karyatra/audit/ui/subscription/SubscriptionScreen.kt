@@ -7,23 +7,23 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,7 +32,6 @@ import id.my.karyatra.audit.component.Header
 import id.my.karyatra.audit.data.SessionManager
 import id.my.karyatra.audit.data.model.subscription.SubscriptionPlan
 import id.my.karyatra.audit.data.viewmodel.SubscriptionViewModel
-import id.my.karyatra.audit.component.UiUtils
 import java.io.File
 import java.io.FileOutputStream
 
@@ -72,51 +71,70 @@ fun SubscriptionScreen(
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // Current Plan Status
-            CurrentPlanCard(
-                state = uiState.subscriptionState,
-                isLoading = uiState.isLoading
-            )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // Standard Top Bar Header
+//        Header(
+//            title = "Paket Berlangganan",
+//            onBack = onBack
+//        )
 
-            Text(
-                text = "Pilihan Paket",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Hero Title Section
+            item {
+                SubscriptionHeroHeader(
+                    isPending = uiState.subscriptionState?.isUpgradePending == true
+                )
+            }
+
+            item {
+                Text(
+                    text = "Pilihan Paket",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    ),
+                    color = Color.Black,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                )
+            }
 
             if (uiState.isPlansLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = primaryColor)
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = primaryColor)
+                    }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(uiState.plans) { plan ->
-                        PlanItemCard(
-                            plan = plan,
-                            isCurrent = uiState.subscriptionState?.plan?.lowercase() == plan.name.lowercase(),
-                            onSelect = {
-                                if (isOwner) {
-                                    selectedPlan = plan
-                                    showUpgradeDialog = true
-                                } else {
-                                    Toast.makeText(context, "Hanya Owner yang dapat melakukan upgrade.", Toast.LENGTH_SHORT).show()
-                                }
+                items(uiState.plans) { plan ->
+                    PlanItemCard(
+                        plan = plan,
+                        isCurrent = uiState.subscriptionState?.plan?.lowercase() == plan.name.lowercase(),
+                        onSelect = {
+                            if (isOwner) {
+                                selectedPlan = plan
+                                showUpgradeDialog = true
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Hanya Owner yang dapat melakukan upgrade.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-                        )
-                    }
+                        }
+                    )
                 }
             }
         }
@@ -135,89 +153,81 @@ fun SubscriptionScreen(
 }
 
 @Composable
-fun CurrentPlanCard(
-    state: id.my.karyatra.audit.data.model.subscription.SubscriptionStateResponse?,
-    isLoading: Boolean
-) {
+fun SubscriptionHeroHeader(isPending: Boolean) {
     val primaryColor = Color(0xFFB63352)
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.15f))
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = primaryColor.copy(alpha = 0.1f),
+                modifier = Modifier.size(56.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.WorkspacePremium,
+                        contentDescription = null,
+                        tint = primaryColor,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             Text(
-                text = "Status Berlangganan",
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.Gray
+                text = "Pilih Paket Terbaik untuk Bisnis Anda",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp
+                ),
+                color = Color.Black,
+                textAlign = TextAlign.Center
             )
-            
-            if (isLoading) {
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    color = primaryColor
-                )
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = "Tingkatkan efisiensi audit & stock opname dengan fitur premium tanpa batasan.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                textAlign = TextAlign.Center,
+                lineHeight = 18.sp
+            )
+
+            if (isPending) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Surface(
+                    color = Color(0xFFE3F2FD),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = state?.plan?.uppercase() ?: "FREE",
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                        color = Color.Black
-                    )
-                    
-                    Surface(
-                        color = when(state?.plan?.lowercase()) {
-                            "pro" -> Color(0xFFFFD700)
-                            "trial" -> Color(0xFF64B5F6)
-                            else -> Color(0xFFE0E0E0)
-                        },
-                        shape = RoundedCornerShape(8.dp)
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = if (state?.isPro() == true) "AKTIF" else "BASIC",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = if (state?.plan?.lowercase() == "pro") Color.Black else Color.White
+                        Icon(
+                            imageVector = Icons.Default.Pending,
+                            contentDescription = null,
+                            tint = Color(0xFF0D47A1),
+                            modifier = Modifier.size(20.dp)
                         )
-                    }
-                }
-
-                if (state?.isPro() == true && state.proUntil != null) {
-                    Text(
-                        text = "Berlaku hingga: ${UiUtils.formatDateIndo(state.proUntil)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = primaryColor
-                    )
-                }
-
-                if (state?.isUpgradePending == true) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Surface(
-                        color = Color(0xFFE3F2FD),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.Pending, null, tint = Color(0xFF0D47A1), modifier = Modifier.size(20.dp))
-                            Text(
-                                text = "Upgrade sedang diverifikasi",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF0D47A1),
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Text(
+                            text = "Pembayaran Anda sedang dalam proses verifikasi admin.",
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = Color(0xFF0D47A1)
+                        )
                     }
                 }
             }
@@ -232,66 +242,177 @@ fun PlanItemCard(
     onSelect: () -> Unit
 ) {
     val primaryColor = Color(0xFFB63352)
+    val isPopular = !plan.badge.isNullOrBlank() || plan.name.lowercase().contains("plus") || plan.name.lowercase().contains("pro") || plan.name.lowercase().contains("prime")
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isCurrent) primaryColor.copy(alpha = 0.05f) else Color.White
-        ),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         border = BorderStroke(
             width = if (isCurrent) 2.dp else 1.dp,
-            color = if (isCurrent) primaryColor else Color.LightGray.copy(alpha = 0.5f)
+            color = if (isCurrent) primaryColor else primaryColor.copy(alpha = 0.15f)
         )
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
+            // Header: Name & Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = plan.name,
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color.Black
-                )
-                if (isCurrent) {
-                    Icon(Icons.Default.CheckCircle, null, tint = primaryColor)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = plan.name,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color.Black
+                    )
+                    if (isCurrent) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Paket Aktif",
+                            tint = primaryColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                if (!plan.badge.isNullOrBlank()) {
+                    Surface(
+                        color = primaryColor,
+                        shape = RoundedCornerShape(100.dp)
+                    ) {
+                        Text(
+                            text = plan.badge,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            ),
+                            color = Color.White
+                        )
+                    }
+                } else if (isPopular && !isCurrent) {
+                    Surface(
+                        color = primaryColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(100.dp)
+                    ) {
+                        Text(
+                            text = "Paling Populer",
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            ),
+                            color = primaryColor
+                        )
+                    }
                 }
             }
-            
-            Text(
-                text = "Rp ${String.format("%,.0f", plan.price)} / ${plan.durationMonths} Bulan",
-                style = MaterialTheme.typography.titleMedium,
-                color = primaryColor,
-                fontWeight = FontWeight.Bold
-            )
-            
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Pricing
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "Rp ${String.format("%,.0f", plan.price)}",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 22.sp
+                    ),
+                    color = primaryColor
+                )
+                Text(
+                    text = "/ ${plan.durationMonths} Bulan",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            }
+
+            if (plan.referencePrice != null && plan.referencePrice > plan.price) {
+                Text(
+                    text = "Rp ${String.format("%,.0f", plan.referencePrice)}",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        textDecoration = TextDecoration.LineThrough
+                    ),
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
-            
-            Text(
-                text = plan.description ?: "Nikmati fitur premium untuk meningkatkan efisiensi audit Anda.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+
+            HorizontalDivider(
+                color = Color.LightGray.copy(alpha = 0.3f),
+                thickness = 1.dp
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Features Checklist
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                PlanFeatureItem("Fitur Audit & Stock Opname Lengkap")
+                PlanFeatureItem("Manajemen Departemen & Kategori")
+                PlanFeatureItem("Export Laporan PDF & Kirim Email")
+                if (plan.description != null && plan.description.isNotBlank()) {
+                    PlanFeatureItem(plan.description)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Action Button
             Button(
                 onClick = onSelect,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp),
+                shape = RoundedCornerShape(100.dp),
                 enabled = !isCurrent,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (plan.name.lowercase() == "pro") Color(0xFFFFD700) else primaryColor,
-                    contentColor = if (plan.name.lowercase() == "pro") Color.Black else Color.White
+                    containerColor = primaryColor,
+                    contentColor = Color.White,
+                    disabledContainerColor = Color.LightGray.copy(alpha = 0.4f),
+                    disabledContentColor = Color.Gray
                 )
             ) {
                 Text(
-                    text = if (isCurrent) "Paket Aktif" else "Pilih Paket",
-                    fontWeight = FontWeight.Bold
+                    text = if (isCurrent) "Paket Aktif" else "Pilih Paket Ini",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
                 )
             }
         }
+    }
+}
+
+@Composable
+fun PlanFeatureItem(text: String) {
+    val primaryColor = Color(0xFFB63352)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.CheckCircle,
+            contentDescription = null,
+            tint = primaryColor,
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.DarkGray
+        )
     }
 }
 
@@ -314,6 +435,7 @@ fun UpgradeDialog(
 
     AlertDialog(
         onDismissRequest = if (isUploading) ({}) else onDismiss,
+        containerColor = Color.White,
         title = { Text("Pembayaran ${plan.name}", fontWeight = FontWeight.Bold) },
         text = {
             Column(
@@ -324,8 +446,8 @@ fun UpgradeDialog(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-                    border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF5F6)),
+                    border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text("PAKET DIPILIH", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
