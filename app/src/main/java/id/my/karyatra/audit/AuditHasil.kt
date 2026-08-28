@@ -420,7 +420,7 @@ fun AuditReportDetailDialog(
         AlertDialog(
             onDismissRequest = { showUpgradeRequiredDialog = false },
             title = { Text("Fitur Khusus Pro", fontWeight = FontWeight.Bold) },
-            text = { Text("Fitur kirim email dan cetak PDF hanya tersedia untuk paket FREE dan PRO. Akun TRIAL tidak memiliki akses ke fitur ini.") },
+            text = { Text("Fitur kirim email dan cetak PDF hanya tersedia untuk pengguna paket PRO. Silakan upgrade ke paket PRO.") },
             confirmButton = {
                 Button(
                     onClick = { showUpgradeRequiredDialog = false },

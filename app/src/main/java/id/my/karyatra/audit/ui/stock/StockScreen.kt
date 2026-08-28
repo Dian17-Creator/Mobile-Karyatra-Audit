@@ -33,23 +33,28 @@ import androidx.navigation.NavHostController
 import id.my.karyatra.audit.*
 import id.my.karyatra.audit.data.RecentActivityData
 import id.my.karyatra.audit.data.viewmodel.StockViewModel
+import id.my.karyatra.audit.data.viewmodel.SubscriptionViewModel
 import id.my.karyatra.audit.navigation.Screen
 
 @Composable
 fun StockScreen(
     navController: NavHostController,
-    viewModel: StockViewModel = viewModel()
+    viewModel: StockViewModel = viewModel(),
+    subViewModel: SubscriptionViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val subState by subViewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
+    var showGatingDialog by remember { mutableStateOf(false) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.fetchDashboardSummary()
+                subViewModel.fetchSubscriptionState()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -156,7 +161,12 @@ fun StockScreen(
                 modifier = Modifier.weight(1f),
                 onClick = {
                     if (navController.currentDestination?.route == Screen.Stock.route) {
-                        context.startActivity(Intent(context, StockOpnameActivity::class.java))
+                        val sub = subState.subscriptionState
+                        if (sub?.isTrial() == true && (uiState.totalStokOpname.toIntOrNull() ?: 0) >= 1) {
+                            showGatingDialog = true
+                        } else {
+                            context.startActivity(Intent(context, StockOpnameActivity::class.java))
+                        }
                     }
                 }
             )
@@ -186,6 +196,32 @@ fun StockScreen(
         }
         
         Spacer(modifier = Modifier.height(12.dp))
+    }
+
+    if (showGatingDialog) {
+        val primaryColor = Color(0xFFB63352)
+        AlertDialog(
+            onDismissRequest = { showGatingDialog = false },
+            title = { Text("Limit Dokumen Trial Tercapai", fontWeight = FontWeight.Bold) },
+            text = { Text("Masa Trial hanya dapat membuat maksimal 1 dokumen stok opname. Silakan verifikasi email owner atau upgrade ke paket PRO untuk akses tak terbatas.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showGatingDialog = false
+                        navController.navigate(Screen.Subscription.route)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                ) {
+                    Text("Upgrade PRO")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGatingDialog = false }) {
+                    Text("Nanti Saja")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 }
 

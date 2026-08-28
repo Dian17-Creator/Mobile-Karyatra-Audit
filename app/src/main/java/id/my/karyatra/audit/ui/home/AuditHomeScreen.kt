@@ -193,7 +193,7 @@ fun AuditHomeScreen(
                 "Pemetaan\nDepartemen" -> onPemetaanDepartemen()
                 "Audit" -> {
                     val sub = subState.subscriptionState
-                    if (sub?.isFree() == true && uiState.totalAudit.toIntOrNull() ?: 0 >= 1) {
+                    if (sub?.isTrial() == true && uiState.totalAudit.toIntOrNull() ?: 0 >= 1) {
                         showGatingDialog = true
                     } else {
                         onAudit(-1)
@@ -213,8 +213,8 @@ fun AuditHomeScreen(
     if (showGatingDialog) {
         AlertDialog(
             onDismissRequest = { showGatingDialog = false },
-            title = { Text("Limit Dokumen Tercapai", fontWeight = FontWeight.Bold) },
-            text = { Text("Paket FREE hanya dapat membuat 1 dokumen audit. Silakan upgrade ke PRO untuk akses tak terbatas.") },
+            title = { Text("Limit Dokumen Trial Tercapai", fontWeight = FontWeight.Bold) },
+            text = { Text("Masa Trial hanya dapat membuat maksimal 1 dokumen audit. Silakan verifikasi email owner atau upgrade ke paket PRO untuk akses tak terbatas.") },
             confirmButton = {
                 Button(
                     onClick = {
