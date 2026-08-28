@@ -62,6 +62,7 @@ import coil.compose.AsyncImage
 import id.my.karyatra.audit.data.*
 import id.my.karyatra.audit.data.viewmodel.StockOpnameUiState
 import id.my.karyatra.audit.data.viewmodel.StockOpnameViewModel
+import id.my.karyatra.audit.data.viewmodel.SubscriptionViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
 import id.my.karyatra.audit.component.verticalScrollbar
 import kotlinx.coroutines.launch
@@ -89,9 +90,11 @@ class StockOpnameActivity : ComponentActivity() {
 fun StockOpnameExecutionScreen(
     auditId: Int = -1,
     viewModel: StockOpnameViewModel = viewModel(),
+    subViewModel: SubscriptionViewModel = viewModel(),
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val subState by subViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val userId = remember { sessionManager.getUser()?.id ?: -1 }
@@ -100,8 +103,12 @@ fun StockOpnameExecutionScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
+    var showEmailDialog by remember { mutableStateOf(false) }
+    var showUpgradeRequiredDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.initialize(auditId, userId)
+        subViewModel.fetchSubscriptionState()
     }
 
     val primaryColor = Color(0xFFB63352)
@@ -119,6 +126,34 @@ fun StockOpnameExecutionScreen(
             snackbarHostState.showSnackbar(it)
             viewModel.clearMessages()
         }
+    }
+
+    if (showUpgradeRequiredDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpgradeRequiredDialog = false },
+            title = { Text("Fitur Khusus Pro", fontWeight = FontWeight.Bold) },
+            text = { Text("Fitur kirim email dan cetak PDF hanya tersedia untuk pengguna paket PRO. Silakan upgrade ke paket PRO.") },
+            confirmButton = {
+                Button(
+                    onClick = { showUpgradeRequiredDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                ) {
+                    Text("Mengerti")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    if (showEmailDialog) {
+        val opnameId = uiState.opnameDetail?.header?.id ?: -1
+        StockSendEmailDialog(
+            isLoading = uiState.isSaving,
+            onDismiss = { showEmailDialog = false },
+            onSend = { recipient ->
+                viewModel.sendEmail(opnameId, recipient, null)
+            }
+        )
     }
 
     // Auto-scroll logic for incomplete items
@@ -159,10 +194,36 @@ fun StockOpnameExecutionScreen(
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    val opnameHeader = uiState.opnameDetail?.header
+                    if (opnameHeader?.status == "Submitted" || opnameHeader?.status == "Selesai") {
+                        IconButton(onClick = {
+                            if (subState.subscriptionState?.canExport() == false) {
+                                showUpgradeRequiredDialog = true
+                            } else {
+                                showEmailDialog = true
+                            }
+                        }) {
+                            Icon(Icons.Default.Email, contentDescription = "Send Email", tint = Color.White)
+                        }
+                        IconButton(onClick = {
+                            if (subState.subscriptionState?.canExport() == false) {
+                                showUpgradeRequiredDialog = true
+                            } else {
+                                val url = "https://audit-laravel.karyatra.cloud/api/stock/opname/${opnameHeader.id}/export-pdf?auditor_id=${userId}"
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                context.startActivity(intent)
+                            }
+                        }) {
+                            Icon(Icons.Default.Print, contentDescription = "Download PDF", tint = Color.White)
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = primaryColor,
                     titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 )
             )
         },

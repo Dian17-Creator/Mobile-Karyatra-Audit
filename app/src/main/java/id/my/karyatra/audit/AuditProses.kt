@@ -54,6 +54,7 @@ import id.my.karyatra.audit.data.*
 import id.my.karyatra.audit.data.FileHelper
 import id.my.karyatra.audit.data.viewmodel.AuditExecutionUiState
 import id.my.karyatra.audit.data.viewmodel.AuditExecutionViewModel
+import id.my.karyatra.audit.data.viewmodel.SubscriptionViewModel
 import id.my.karyatra.audit.ui.theme.Karyatra_AuditTheme
 import id.my.karyatra.audit.component.verticalScrollbar
 import kotlinx.coroutines.launch
@@ -84,9 +85,11 @@ class AuditProses : ComponentActivity() {
 fun AuditExecutionScreen(
     auditId: Int = -1,
     viewModel: AuditExecutionViewModel = viewModel(),
+    subViewModel: SubscriptionViewModel = viewModel(),
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val subState by subViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val currentUser = sessionManager.getUser()
@@ -96,8 +99,12 @@ fun AuditExecutionScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
+    var showEmailDialog by remember { mutableStateOf(false) }
+    var showUpgradeRequiredDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.initialize(auditId)
+        subViewModel.fetchSubscriptionState()
     }
 
     val primaryColor = Color(0xFFB63352)
@@ -115,6 +122,34 @@ fun AuditExecutionScreen(
             snackbarHostState.showSnackbar(it)
             viewModel.clearMessages()
         }
+    }
+
+    if (showUpgradeRequiredDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpgradeRequiredDialog = false },
+            title = { Text("Fitur Khusus Pro", fontWeight = FontWeight.Bold) },
+            text = { Text("Fitur kirim email dan cetak PDF hanya tersedia untuk pengguna paket PRO. Silakan upgrade ke paket PRO.") },
+            confirmButton = {
+                Button(
+                    onClick = { showUpgradeRequiredDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                ) {
+                    Text("Mengerti")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    if (showEmailDialog && uiState.auditDetail?.audit?.id != null) {
+        val currentAuditId = uiState.auditDetail!!.audit.id
+        AuditSendEmailDialog(
+            isLoading = uiState.isSaving,
+            onDismiss = { showEmailDialog = false },
+            onSend = { recipient ->
+                viewModel.sendEmail(currentAuditId, recipient, null)
+            }
+        )
     }
 
     // Auto-scroll logic
@@ -147,6 +182,52 @@ fun AuditExecutionScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            val audit = uiState.auditDetail?.audit
+            TopAppBar(
+                title = {
+                    Text(
+                        text = audit?.documentId ?: "Audit",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (audit?.status == "Submitted" || audit?.status == "Selesai") {
+                        IconButton(onClick = {
+                            if (subState.subscriptionState?.canExport() == false) {
+                                showUpgradeRequiredDialog = true
+                            } else {
+                                showEmailDialog = true
+                            }
+                        }) {
+                            Icon(Icons.Default.Email, contentDescription = "Send Email", tint = Color.White)
+                        }
+                        IconButton(onClick = {
+                            if (subState.subscriptionState?.canExport() == false) {
+                                showUpgradeRequiredDialog = true
+                            } else {
+                                val url = "https://audit-laravel.karyatra.cloud/api/audits/${audit.id}/export-pdf"
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                context.startActivity(intent)
+                            }
+                        }) {
+                            Icon(Icons.Default.Print, contentDescription = "Download PDF", tint = Color.White)
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = primaryColor,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
+            )
+        },
         containerColor = backColor
     ) { innerPadding ->
         Column(

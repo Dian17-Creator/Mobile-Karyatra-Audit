@@ -233,8 +233,13 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
                 ?.find { it.response?.id == responseId }
                 ?.photos?.size ?: 0
                 
-            val maxPhotos = subState?.getMaxPhotos(isOpname = false) ?: 1
+            val maxPhotos = subState?.getMaxPhotos(isOpname = false) ?: 0
             
+            if (maxPhotos == 0) {
+                _uiState.update { it.copy(isUploading = false, errorMessage = "Paket FREE tidak diizinkan mengunggah foto bukti. Silakan upgrade ke paket PRO.") }
+                return@launch
+            }
+
             if (currentPhotoCount >= maxPhotos) {
                 _uiState.update { it.copy(isUploading = false, errorMessage = "Limit foto tercapai ($maxPhotos foto). Silakan upgrade paket.") }
                 return@launch
@@ -276,6 +281,22 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isSaving = false) }
                     _uiState.value.auditDetail?.audit?.id?.let { fetchAuditDetail(it) }
+                }
+                is ApiResult.Error -> {
+                    _uiState.update { it.copy(isSaving = false, errorMessage = result.message) }
+                }
+            }
+        }
+    }
+
+    fun sendEmail(auditId: Int, recipient: String, message: String?) {
+        val user = sessionManager.getUser() ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true) }
+            val request = SendEmailRequest(auditId = auditId, recipient = recipient, message = message)
+            when (val result = executionRepository.sendAuditEmail(user.id, request)) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(isSaving = false, successMessage = result.data.message) }
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isSaving = false, errorMessage = result.message) }

@@ -25,21 +25,20 @@ data class SubscriptionStateResponse(
 
     fun getMaxPhotos(isOpname: Boolean): Int {
         return when {
-            isFree() -> 1
-            isTrial() -> 999 // Effectively unlimited
+            isFree() -> 0
+            isTrial() -> 1
             isPro() -> if (isOpname) 5 else 10
-            else -> 1
+            else -> 0
         }
     }
 
     fun canCreateDocument(currentCount: Int): Boolean {
-        if (isFree()) return currentCount < 1
-        return true // Trial & Pro unlimited documents
+        if (isTrial()) return currentCount < 1
+        return true // Free & Pro unlimited documents
     }
 
     fun canExport(): Boolean {
-        if (isTrial()) return false
-        return true // Free and Pro can export
+        return isPro() // Only Pro can export PDF & send email
     }
 }
 

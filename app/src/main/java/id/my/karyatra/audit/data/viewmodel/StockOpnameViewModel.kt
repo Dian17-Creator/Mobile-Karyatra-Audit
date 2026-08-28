@@ -221,8 +221,13 @@ class StockOpnameViewModel(application: Application) : AndroidViewModel(applicat
                 ?.find { it.response?.id == responseId }
                 ?.photos?.size ?: 0
                 
-            val maxPhotos = subState?.getMaxPhotos(isOpname = true) ?: 1
+            val maxPhotos = subState?.getMaxPhotos(isOpname = true) ?: 0
             
+            if (maxPhotos == 0) {
+                _uiState.update { it.copy(isUploading = false, errorMessage = "Paket FREE tidak diizinkan mengunggah foto bukti. Silakan upgrade ke paket PRO.") }
+                return@launch
+            }
+
             if (currentPhotoCount >= maxPhotos) {
                 _uiState.update { it.copy(isUploading = false, errorMessage = "Limit foto tercapai ($maxPhotos foto). Silakan upgrade paket.") }
                 return@launch
@@ -298,6 +303,21 @@ class StockOpnameViewModel(application: Application) : AndroidViewModel(applicat
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isSubmitting = false, errorMessage = result.message) }
+                }
+            }
+        }
+    }
+
+    fun sendEmail(auditId: Int, recipient: String, message: String?) {
+        val user = sessionManager.getUser() ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true) }
+            when (val result = opnameRepository.sendEmail(user.id, auditId, recipient, message)) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(isSaving = false, successMessage = result.data.message) }
+                }
+                is ApiResult.Error -> {
+                    _uiState.update { it.copy(isSaving = false, errorMessage = result.message) }
                 }
             }
         }
