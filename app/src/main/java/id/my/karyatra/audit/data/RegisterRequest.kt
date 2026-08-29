@@ -6,5 +6,6 @@ data class RegisterRequest(
     @SerializedName("namalengkap") val name: String,
     @SerializedName("perusahaan") val company: String,
     @SerializedName("email") val email: String,
-    @SerializedName("password") val password: String
+    @SerializedName("password") val password: String,
+    @SerializedName("register_eula") val eulaAccepted: Boolean = true
 )
