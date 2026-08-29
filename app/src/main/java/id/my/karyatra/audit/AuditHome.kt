@@ -89,9 +89,19 @@ fun MainContainer(
                 val repository = CompanyLifecycleRepository()
                 val result = repository.getCompanyStatus(userId)
                 if (result is ApiResult.Success) {
-                    val isInactive = result.data.data?.isCompanyInactive ?: false
-                    isCompanyInactive = isInactive
-                    if (isInactive) {
+                    val data = result.data.data
+                    val isInactive = data?.isCompanyInactive ?: false
+                    val isDeletionPending = data?.isDeletionPending ?: false
+
+                    isCompanyInactive = isInactive || isDeletionPending
+
+                    if (isDeletionPending) {
+                        if (isOwner) {
+                            initialStartDestination = Screen.CompanyDangerZone.route
+                        } else {
+                            deactivationMessage = "Akun perusahaan Anda sedang dalam proses penghapusan."
+                        }
+                    } else if (isInactive) {
                         if (isOwner) {
                             initialStartDestination = Screen.CompanyStatus.route
                         } else {
@@ -110,7 +120,7 @@ fun MainContainer(
         CompanyDeactivatedEventBus.deactivatedEvent.collect { message ->
             if (isOwner) {
                 isCompanyInactive = true
-                if (currentRoute != Screen.CompanyStatus.route) {
+                if (currentRoute != Screen.CompanyStatus.route && currentRoute != Screen.CompanyDangerZone.route) {
                     navController.navigate(Screen.CompanyStatus.route) {
                         launchSingleTop = true
                     }
@@ -141,6 +151,7 @@ fun MainContainer(
         Screen.ManageDepartments.route -> "Kelola Departemen"
         Screen.ManageCompany.route -> "Kelola Perusahaan"
         Screen.CompanyStatus.route -> "Status Perusahaan"
+        Screen.CompanyDangerZone.route -> "Zona Berbahaya"
         Screen.AuditPertanyaan.route -> "Kategori & Pertanyaan"
         Screen.AuditDepartemen.route -> "Pemetaan Departemen"
         Screen.AuditProses.route + "?audit_id={audit_id}" -> "Audit Proses"
@@ -155,7 +166,7 @@ fun MainContainer(
 
     val isAuditProsesScreen = currentRoute?.startsWith(Screen.AuditProses.route) == true
     val isChildScreen = !isTopLevelScreen && currentRoute != null
-    val shouldHideBack = currentRoute == Screen.CompanyStatus.route && isCompanyInactive
+    val shouldHideBack = (currentRoute == Screen.CompanyStatus.route || currentRoute == Screen.CompanyDangerZone.route) && isCompanyInactive
 
     Scaffold(
         topBar = {

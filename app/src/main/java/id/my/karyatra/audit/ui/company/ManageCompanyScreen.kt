@@ -26,12 +26,16 @@ import id.my.karyatra.audit.R
 import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.painter.Painter
 
+import androidx.compose.material.icons.filled.Warning
+
 @Composable
 fun ManageCompanyScreen(
     onBack: () -> Unit,
-    onNavigateToCompanyStatus: () -> Unit
+    onNavigateToCompanyStatus: () -> Unit,
+    onNavigateToDangerZone: () -> Unit = {}
 ) {
     val primaryColor = Color(0xFFB63352)
+    val dangerRed = Color(0xFFDC2626)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -47,19 +51,20 @@ fun ManageCompanyScreen(
                 .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-//            Text(
-//                text = "Pilih submenu untuk mengelola konfigurasi perusahaan Anda.",
-//                modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp),
-//                style = MaterialTheme.typography.bodyMedium,
-//                color = Color.Gray
-//            )
-
             CompanySubmenuItem(
                 title = "Status Perusahaan",
                 subtitle = "Pengaturan akses sementara akun perusahaan",
                 painter = painterResource(id = R.drawable.ic_company),
                 iconColor = primaryColor,
                 onClick = onNavigateToCompanyStatus
+            )
+
+            CompanySubmenuItem(
+                title = "Zona Berbahaya",
+                subtitle = "Hapus akun & data perusahaan secara permanen",
+                icon = Icons.Default.Warning,
+                iconColor = dangerRed,
+                onClick = onNavigateToDangerZone
             )
         }
     }

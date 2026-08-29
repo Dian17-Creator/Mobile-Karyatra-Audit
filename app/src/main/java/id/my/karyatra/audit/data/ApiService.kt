@@ -405,4 +405,14 @@ interface ApiService {
         @Body request: ReactivateCompanyRequest
     ): Response<CompanyLifecycleStateResponse>
 
+    @POST("api/company/delete-request")
+    suspend fun requestCompanyDeletion(
+        @Body request: RequestCompanyDeletionRequest
+    ): Response<CompanyLifecycleStateResponse>
+
+    @POST("api/company/cancel-deletion")
+    suspend fun cancelCompanyDeletion(
+        @Body request: CancelCompanyDeletionRequest
+    ): Response<CompanyLifecycleStateResponse>
+
 }

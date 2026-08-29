@@ -57,4 +57,38 @@ class CompanyLifecycleRepository(
             ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
     }
+
+    suspend fun requestCompanyDeletion(request: RequestCompanyDeletionRequest): ApiResult<CompanyLifecycleStateResponse> {
+        return try {
+            val response = apiService.requestCompanyDeletion(request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Gagal mengajukan penghapusan perusahaan.")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun cancelCompanyDeletion(request: CancelCompanyDeletionRequest): ApiResult<CompanyLifecycleStateResponse> {
+        return try {
+            val response = apiService.cancelCompanyDeletion(request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Gagal membatalkan penghapusan perusahaan.")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
+        }
+    }
 }
