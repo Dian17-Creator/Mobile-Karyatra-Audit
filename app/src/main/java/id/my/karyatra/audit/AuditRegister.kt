@@ -1,6 +1,7 @@
 package id.my.karyatra.audit
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -10,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -24,8 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,6 +73,7 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var confirmPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    var eulaAccepted by rememberSaveable { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
 
     fun performRegister() {
@@ -79,6 +86,8 @@ fun RegisterScreen(
             Toast.makeText(context, "Password minimal 8 karakter", Toast.LENGTH_SHORT).show()
         } else if (password != confirmPassword) {
             Toast.makeText(context, "Konfirmasi password tidak cocok", Toast.LENGTH_SHORT).show()
+        } else if (!eulaAccepted) {
+            Toast.makeText(context, "Anda harus menyetujui Syarat & Ketentuan (EULA) untuk mendaftar", Toast.LENGTH_SHORT).show()
         } else {
             showConfirmationDialog = true
         }
@@ -215,12 +224,65 @@ fun RegisterScreen(
                     enabled = !uiState.isLoading
                 )
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val eulaAnnotatedString = buildAnnotatedString {
+                    append("Saya menyetujui ")
+
+                    pushStringAnnotation(tag = "EULA", annotation = "https://audit.karyatra.cloud/eula.php")
+                    withStyle(style = SpanStyle(color = primaryColor, fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline)) {
+                        append("Syarat & Ketentuan (EULA)")
+                    }
+                    pop()
+
+                    append(" dan ")
+
+                    pushStringAnnotation(tag = "PRIVACY", annotation = "https://audit.karyatra.cloud/privacy-policy.php")
+                    withStyle(style = SpanStyle(color = primaryColor, fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline)) {
+                        append("Kebijakan Privasi")
+                    }
+                    pop()
+
+                    append(" Auditra.")
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = eulaAccepted,
+                        onCheckedChange = { eulaAccepted = it },
+                        colors = CheckboxDefaults.colors(checkedColor = primaryColor),
+                        enabled = !uiState.isLoading
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    ClickableText(
+                        text = eulaAnnotatedString,
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color.DarkGray),
+                        onClick = { offset ->
+                            eulaAnnotatedString.getStringAnnotations(tag = "EULA", start = offset, end = offset)
+                                .firstOrNull()?.let { annotation ->
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item))
+                                    context.startActivity(intent)
+                                }
+                            eulaAnnotatedString.getStringAnnotations(tag = "PRIVACY", start = offset, end = offset)
+                                .firstOrNull()?.let { annotation ->
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item))
+                                    context.startActivity(intent)
+                                }
+                        }
+                    )
+                }
+
                 Button(
                     onClick = { performRegister() },
-                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp).height(56.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp).height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                    enabled = !uiState.isLoading
+                    enabled = !uiState.isLoading && eulaAccepted
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
@@ -280,7 +342,7 @@ fun RegisterScreen(
                         Button(
                             onClick = {
                                 showConfirmationDialog = false
-                                viewModel.register(RegisterRequest(name, company, email, password))
+                                viewModel.register(RegisterRequest(name, company, email, password, eulaAccepted))
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                         ) {
