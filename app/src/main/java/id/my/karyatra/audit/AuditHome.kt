@@ -83,17 +83,20 @@ fun MainContainer(
                            currentRoute == Screen.Stock.route || 
                            currentRoute == Screen.Profile.route
 
+    val isAuditProsesScreen = currentRoute?.startsWith(Screen.AuditProses.route) == true
     val isChildScreen = !isTopLevelScreen && currentRoute != null
 
     Scaffold(
         topBar = {
-            Header(
-                title = headerTitle,
-                onBack = if (isChildScreen) {
-                    { navController.popBackStack() }
-                } else null,
-                centerTitle = isChildScreen
-            )
+            if (!isAuditProsesScreen) {
+                Header(
+                    title = headerTitle,
+                    onBack = if (isChildScreen) {
+                        { navController.popBackStack() }
+                    } else null,
+                    centerTitle = isChildScreen
+                )
+            }
         },
         bottomBar = {
             if (isTopLevelScreen) {
@@ -105,7 +108,10 @@ fun MainContainer(
             navController = navController,
             username = username,
             onLogout = onLogout,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(
+                top = if (isAuditProsesScreen) 0.dp else innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding()
+            )
         )
     }
 }
