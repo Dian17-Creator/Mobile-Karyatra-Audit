@@ -137,7 +137,13 @@ fun MainNavigation(
         }
         composable(Screen.CompanyStatus.route) {
             CompanyStatusScreen(
-                onBack = { navController.popBackStack() },
+                onBack = {
+                    if (!navController.popBackStack()) {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                },
                 onLogout = onLogout,
                 onCompanyStatusLoaded = onCompanyStatusLoaded
             )

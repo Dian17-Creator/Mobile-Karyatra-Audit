@@ -58,11 +58,17 @@ fun CompanyStatusScreen(
     LaunchedEffect(uiState) {
         val currentState = uiState
         if (currentState is CompanyUiState.Success) {
-            onCompanyStatusLoaded(currentState.lifecycleData.isCompanyInactive)
+            val isInactive = currentState.lifecycleData.isCompanyInactive
+            onCompanyStatusLoaded(isInactive)
             if (currentState.message != null) {
                 Toast.makeText(context, currentState.message, Toast.LENGTH_LONG).show()
                 password = ""
                 isConfirmed = false
+                
+                // If company was successfully reactivated, navigate back to Home
+                if (!isInactive) {
+                    onBack()
+                }
             }
         } else if (currentState is CompanyUiState.Error) {
             snackbarHostState.showSnackbar(currentState.errorMessage)

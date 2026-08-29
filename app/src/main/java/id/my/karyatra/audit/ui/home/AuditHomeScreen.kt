@@ -180,17 +180,11 @@ fun AuditHomeScreen(
                         onClick = { onManageDepartments() }
                     )
                 }
-                Row(
+                MenuCard(
+                    menu = HomeMenu("Kelola Perusahaan", iconRes = R.drawable.ic_company),
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    MenuCard(
-                        menu = HomeMenu("Kelola\nPerusahaan", iconRes = R.drawable.ic_company),
-                        modifier = Modifier.weight(1f),
-                        onClick = { onManageCompany() }
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+                    onClick = { onManageCompany() }
+                )
             }
         }
 
