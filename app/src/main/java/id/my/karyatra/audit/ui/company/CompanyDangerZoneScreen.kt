@@ -33,6 +33,7 @@ import id.my.karyatra.audit.data.viewmodel.SubscriptionViewModel
 @Composable
 fun CompanyDangerZoneScreen(
     onBack: () -> Unit,
+    onCompanyStatusLoaded: (Boolean, Boolean) -> Unit = { _, _ -> },
     viewModel: CompanyDangerZoneViewModel = viewModel(),
     subViewModel: SubscriptionViewModel = viewModel()
 ) {
@@ -61,6 +62,7 @@ fun CompanyDangerZoneScreen(
     LaunchedEffect(userId) {
         if (userId != -1) {
             viewModel.loadStatus(userId)
+            subViewModel.fetchSubscriptionState()
         }
     }
 
@@ -68,6 +70,8 @@ fun CompanyDangerZoneScreen(
         val currentState = uiState
         if (currentState is CompanyUiState.Success) {
             val isPending = currentState.lifecycleData.isDeletionPending
+            val isInactive = currentState.lifecycleData.isCompanyInactive
+            onCompanyStatusLoaded(isInactive || isPending, isPending)
             if (currentState.message != null) {
                 Toast.makeText(context, currentState.message, Toast.LENGTH_LONG).show()
                 typedCompanyName = ""
@@ -80,6 +84,16 @@ fun CompanyDangerZoneScreen(
                 if (!isPending && currentState.message.contains("batal", ignoreCase = true)) {
                     onBack()
                 }
+                viewModel.clearMessages()
+            }
+            if (currentState.actionError != null) {
+                val errorMsg = currentState.actionError
+                if (errorMsg.contains("Finance", ignoreCase = true) || errorMsg.contains("langganan", ignoreCase = true)) {
+                    pendingFinanceAlertDialog = errorMsg
+                } else {
+                    snackbarHostState.showSnackbar(errorMsg)
+                }
+                viewModel.clearMessages()
             }
         } else if (currentState is CompanyUiState.Error) {
             val errorMsg = currentState.errorMessage

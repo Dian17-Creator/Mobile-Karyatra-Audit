@@ -18,8 +18,8 @@ class CompanyDangerZoneViewModel(
 
     fun clearMessages() {
         val current = _uiState.value
-        if (current is CompanyUiState.Success && current.message != null) {
-            _uiState.value = CompanyUiState.Success(current.lifecycleData, null)
+        if (current is CompanyUiState.Success && (current.message != null || current.actionError != null)) {
+            _uiState.value = CompanyUiState.Success(current.lifecycleData, null, null)
         }
     }
 
@@ -49,6 +49,7 @@ class CompanyDangerZoneViewModel(
         isPro: Boolean
     ) {
         viewModelScope.launch {
+            val currentData = (_uiState.value as? CompanyUiState.Success)?.lifecycleData
             _uiState.value = CompanyUiState.Loading
             val req = RequestCompanyDeletionRequest(
                 userId = userId,
@@ -67,11 +68,19 @@ class CompanyDangerZoneViewModel(
                             "Penghapusan perusahaan berhasil dijadwalkan."
                         )
                     } else {
-                        _uiState.value = CompanyUiState.Error("Respon tidak valid.")
+                        if (currentData != null) {
+                            _uiState.value = CompanyUiState.Success(currentData, actionError = "Respon tidak valid.")
+                        } else {
+                            _uiState.value = CompanyUiState.Error("Respon tidak valid.")
+                        }
                     }
                 }
                 is ApiResult.Error -> {
-                    _uiState.value = CompanyUiState.Error(result.message)
+                    if (currentData != null) {
+                        _uiState.value = CompanyUiState.Success(currentData, actionError = result.message)
+                    } else {
+                        _uiState.value = CompanyUiState.Error(result.message)
+                    }
                 }
             }
         }
@@ -79,6 +88,7 @@ class CompanyDangerZoneViewModel(
 
     fun cancelDeletion(userId: Int, password: String) {
         viewModelScope.launch {
+            val currentData = (_uiState.value as? CompanyUiState.Success)?.lifecycleData
             _uiState.value = CompanyUiState.Loading
             val req = CancelCompanyDeletionRequest(userId, password)
             when (val result = repository.cancelCompanyDeletion(req)) {
@@ -90,11 +100,19 @@ class CompanyDangerZoneViewModel(
                             "Penghapusan perusahaan berhasil dibatalkan."
                         )
                     } else {
-                        _uiState.value = CompanyUiState.Error("Respon tidak valid.")
+                        if (currentData != null) {
+                            _uiState.value = CompanyUiState.Success(currentData, actionError = "Respon tidak valid.")
+                        } else {
+                            _uiState.value = CompanyUiState.Error("Respon tidak valid.")
+                        }
                     }
                 }
                 is ApiResult.Error -> {
-                    _uiState.value = CompanyUiState.Error(result.message)
+                    if (currentData != null) {
+                        _uiState.value = CompanyUiState.Success(currentData, actionError = result.message)
+                    } else {
+                        _uiState.value = CompanyUiState.Error(result.message)
+                    }
                 }
             }
         }

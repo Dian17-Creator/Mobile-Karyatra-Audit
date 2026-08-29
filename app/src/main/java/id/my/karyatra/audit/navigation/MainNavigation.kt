@@ -58,7 +58,7 @@ fun MainNavigation(
     modifier: Modifier = Modifier,
     username: String,
     onLogout: () -> Unit,
-    onCompanyStatusLoaded: (Boolean) -> Unit = {},
+    onCompanyStatusLoaded: (Boolean, Boolean) -> Unit = { _, _ -> },
     startDestination: String = Screen.Home.route
 ) {
     val mainTabs = listOf(Screen.Home.route, Screen.Stock.route, Screen.Profile.route)
@@ -160,7 +160,8 @@ fun MainNavigation(
                             popUpTo(0) { inclusive = true }
                         }
                     }
-                }
+                },
+                onCompanyStatusLoaded = onCompanyStatusLoaded
             )
         }
         composable(Screen.AuditPertanyaan.route) {

@@ -196,24 +196,16 @@ fun StockOpnameExecutionScreen(
                 },
                 actions = {
                     val opnameHeader = uiState.opnameDetail?.header
-                    if (opnameHeader?.status == "Submitted" || opnameHeader?.status == "Selesai") {
+                    if ((opnameHeader?.status == "Submitted" || opnameHeader?.status == "Selesai") && subState.subscriptionState?.canExport() == true) {
                         IconButton(onClick = {
-                            if (subState.subscriptionState?.canExport() == false) {
-                                showUpgradeRequiredDialog = true
-                            } else {
-                                showEmailDialog = true
-                            }
+                            showEmailDialog = true
                         }) {
                             Icon(Icons.Default.Email, contentDescription = "Send Email", tint = Color.White)
                         }
                         IconButton(onClick = {
-                            if (subState.subscriptionState?.canExport() == false) {
-                                showUpgradeRequiredDialog = true
-                            } else {
-                                val url = "https://audit-laravel.karyatra.cloud/api/stock/opname/${opnameHeader.id}/export-pdf?auditor_id=${userId}"
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                context.startActivity(intent)
-                            }
+                            val url = "https://audit-laravel.karyatra.cloud/api/stock/opname/${opnameHeader.id}/export-pdf?auditor_id=${userId}"
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            context.startActivity(intent)
                         }) {
                             Icon(Icons.Default.Print, contentDescription = "Download PDF", tint = Color.White)
                         }
