@@ -31,8 +31,10 @@ import androidx.navigation.navArgument
 
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Domain
+import androidx.compose.material.icons.filled.Warning
 import id.my.karyatra.audit.ui.company.ManageCompanyScreen
 import id.my.karyatra.audit.ui.company.CompanyStatusScreen
+import id.my.karyatra.audit.ui.company.CompanyDangerZoneScreen
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Default.Home)
@@ -42,6 +44,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object ManageDepartments : Screen("manage_departments", "Kelola Departemen", Icons.Default.Settings)
     object ManageCompany : Screen("manage_company", "Kelola Perusahaan", Icons.Default.Business)
     object CompanyStatus : Screen("company_status", "Status Perusahaan", Icons.Default.Domain)
+    object CompanyDangerZone : Screen("company_danger_zone", "Zona Berbahaya", Icons.Default.Warning)
     object AuditPertanyaan : Screen("audit_pertanyaan", "Kategori & Pertanyaan", Icons.Default.Settings)
     object AuditDepartemen : Screen("audit_departemen", "Pemetaan Departemen", Icons.Default.Settings)
     object AuditProses : Screen("audit_proses", "Audit", Icons.Default.Settings)
@@ -132,7 +135,8 @@ fun MainNavigation(
         composable(Screen.ManageCompany.route) {
             ManageCompanyScreen(
                 onBack = { navController.popBackStack() },
-                onNavigateToCompanyStatus = { navController.navigate(Screen.CompanyStatus.route) }
+                onNavigateToCompanyStatus = { navController.navigate(Screen.CompanyStatus.route) },
+                onNavigateToDangerZone = { navController.navigate(Screen.CompanyDangerZone.route) }
             )
         }
         composable(Screen.CompanyStatus.route) {
@@ -146,6 +150,17 @@ fun MainNavigation(
                 },
                 onLogout = onLogout,
                 onCompanyStatusLoaded = onCompanyStatusLoaded
+            )
+        }
+        composable(Screen.CompanyDangerZone.route) {
+            CompanyDangerZoneScreen(
+                onBack = {
+                    if (!navController.popBackStack()) {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
             )
         }
         composable(Screen.AuditPertanyaan.route) {
