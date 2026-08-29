@@ -39,16 +39,20 @@ fun ManageCompanyScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(
+                    top = (paddingValues.calculateTopPadding() - 8.dp).coerceAtLeast(0.dp),
+                    bottom = paddingValues.calculateBottomPadding()
+                )
                 .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Pilih submenu untuk mengelola akun dan konfigurasi perusahaan Anda.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
+//            Text(
+//                text = "Pilih submenu untuk mengelola konfigurasi perusahaan Anda.",
+//                modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp),
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = Color.Gray
+//            )
 
             CompanySubmenuItem(
                 title = "Status Perusahaan",
