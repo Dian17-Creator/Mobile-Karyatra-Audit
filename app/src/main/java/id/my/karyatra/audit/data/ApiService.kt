@@ -389,4 +389,20 @@ interface ApiService {
         @retrofit2.http.Query("user_id") userId: Int
     ): Response<GenericResponse>
 
+    // Company Lifecycle Management
+    @GET("api/company/status")
+    suspend fun getCompanyStatus(
+        @retrofit2.http.Query("user_id") userId: Int
+    ): Response<CompanyLifecycleStateResponse>
+
+    @POST("api/company/deactivate")
+    suspend fun deactivateCompany(
+        @Body request: DeactivateCompanyRequest
+    ): Response<CompanyLifecycleStateResponse>
+
+    @POST("api/company/reactivate")
+    suspend fun reactivateCompany(
+        @Body request: ReactivateCompanyRequest
+    ): Response<CompanyLifecycleStateResponse>
+
 }

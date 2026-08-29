@@ -29,12 +29,19 @@ import id.my.karyatra.audit.AuditHasilScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Domain
+import id.my.karyatra.audit.ui.company.ManageCompanyScreen
+import id.my.karyatra.audit.ui.company.CompanyStatusScreen
+
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Default.Home)
     object Stock : Screen("stock", "Stock", Icons.Default.Inventory2)
     object Profile : Screen("profile", "Profile", Icons.Default.Person)
     object ManageUsers : Screen("manage_users", "Kelola User", Icons.Default.People)
     object ManageDepartments : Screen("manage_departments", "Kelola Departemen", Icons.Default.Settings)
+    object ManageCompany : Screen("manage_company", "Kelola Perusahaan", Icons.Default.Business)
+    object CompanyStatus : Screen("company_status", "Status Perusahaan", Icons.Default.Domain)
     object AuditPertanyaan : Screen("audit_pertanyaan", "Kategori & Pertanyaan", Icons.Default.Settings)
     object AuditDepartemen : Screen("audit_departemen", "Pemetaan Departemen", Icons.Default.Settings)
     object AuditProses : Screen("audit_proses", "Audit", Icons.Default.Settings)
@@ -47,13 +54,15 @@ fun MainNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     username: String,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onCompanyStatusLoaded: (Boolean) -> Unit = {},
+    startDestination: String = Screen.Home.route
 ) {
     val mainTabs = listOf(Screen.Home.route, Screen.Stock.route, Screen.Profile.route)
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = startDestination,
         modifier = modifier,
         enterTransition = {
             val fromIndex = mainTabs.indexOf(initialState.destination.route)
@@ -95,6 +104,7 @@ fun MainNavigation(
                 username = username,
                 onManageUsers = { navController.navigate(Screen.ManageUsers.route) },
                 onManageDepartments = { navController.navigate(Screen.ManageDepartments.route) },
+                onManageCompany = { navController.navigate(Screen.ManageCompany.route) },
                 onKategoriPertanyaan = { navController.navigate(Screen.AuditPertanyaan.route) },
                 onPemetaanDepartemen = { navController.navigate(Screen.AuditDepartemen.route) },
                 onAudit = { auditId -> 
@@ -118,6 +128,19 @@ fun MainNavigation(
         }
         composable(Screen.ManageDepartments.route) {
             ManageDepartmentsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Screen.ManageCompany.route) {
+            ManageCompanyScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToCompanyStatus = { navController.navigate(Screen.CompanyStatus.route) }
+            )
+        }
+        composable(Screen.CompanyStatus.route) {
+            CompanyStatusScreen(
+                onBack = { navController.popBackStack() },
+                onLogout = onLogout,
+                onCompanyStatusLoaded = onCompanyStatusLoaded
+            )
         }
         composable(Screen.AuditPertanyaan.route) {
             AuditPertanyaanScreen(onBack = { navController.popBackStack() })

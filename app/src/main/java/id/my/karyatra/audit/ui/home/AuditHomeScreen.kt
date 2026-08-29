@@ -42,7 +42,8 @@ import id.my.karyatra.audit.component.UiUtils
 
 data class HomeMenu(
     val title: String,
-    @DrawableRes val iconRes: Int
+    @DrawableRes val iconRes: Int = 0,
+    val iconVector: ImageVector? = null
 )
 
 @Composable
@@ -52,6 +53,7 @@ fun AuditHomeScreen(
     subViewModel: SubscriptionViewModel = viewModel(),
     onManageUsers: () -> Unit = {},
     onManageDepartments: () -> Unit = {},
+    onManageCompany: () -> Unit = {},
     onKategoriPertanyaan: () -> Unit = {},
     onPemetaanDepartemen: () -> Unit = {},
     onAudit: (Int) -> Unit = {},
@@ -161,21 +163,34 @@ fun AuditHomeScreen(
         )
 
         if (isOwner) {
-            HomeSectionTitle(title = "Kelola User & Departemen")
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                MenuCard(
-                    menu = HomeMenu("Kelola\nUser", R.drawable.ic_profile3),
-                    modifier = Modifier.weight(1f),
-                    onClick = { onManageUsers() }
-                )
-                MenuCard(
-                    menu = HomeMenu("Kelola\nDepartemen", R.drawable.auditdept),
-                    modifier = Modifier.weight(1f),
-                    onClick = { onManageDepartments() }
-                )
+            HomeSectionTitle(title = "Kelola User, Departemen & Perusahaan")
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    MenuCard(
+                        menu = HomeMenu("Kelola\nUser", R.drawable.ic_profile3),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onManageUsers() }
+                    )
+                    MenuCard(
+                        menu = HomeMenu("Kelola\nDepartemen", R.drawable.auditdept),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onManageDepartments() }
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    MenuCard(
+                        menu = HomeMenu("Kelola\nPerusahaan", iconRes = R.drawable.ic_company),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onManageCompany() }
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
         }
 
@@ -458,12 +473,21 @@ fun MenuCard(menu: HomeMenu, modifier: Modifier = Modifier, onClick: (String) ->
                     .background(Color(0xFFB63352).copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(id = menu.iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = Color(0xFFB63352)
-                )
+                if (menu.iconVector != null) {
+                    Icon(
+                        imageVector = menu.iconVector,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = Color(0xFFB63352)
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = menu.iconRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = Color(0xFFB63352)
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(

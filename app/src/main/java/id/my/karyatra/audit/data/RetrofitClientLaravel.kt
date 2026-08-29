@@ -17,6 +17,7 @@ object RetrofitClientLaravel {
     }
 
     private val client = OkHttpClient.Builder()
+        .addInterceptor(CompanyStatusInterceptor())
         .addInterceptor(logging)
         .connectTimeout(60, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
