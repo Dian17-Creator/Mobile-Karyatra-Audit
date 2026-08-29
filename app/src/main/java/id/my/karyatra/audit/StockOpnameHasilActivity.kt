@@ -443,25 +443,19 @@ fun StockOpnameReportDetailDialog(
                     title = { Text(header.documentId, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
                     navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
                     actions = {
-                        IconButton(onClick = { 
-                            if (subState.subscriptionState?.canExport() == false) {
-                                showUpgradeRequiredDialog = true
-                            } else {
+                        if (subState.subscriptionState?.canExport() == true) {
+                            IconButton(onClick = {
                                 showEmailDialog = true 
+                            }) {
+                                Icon(Icons.Default.Email, contentDescription = "Send Email")
                             }
-                        }) {
-                            Icon(Icons.Default.Email, contentDescription = "Send Email")
-                        }
-                        IconButton(onClick = {
-                            if (subState.subscriptionState?.canExport() == false) {
-                                showUpgradeRequiredDialog = true
-                            } else {
+                            IconButton(onClick = {
                                 val url = "https://audit-laravel.karyatra.cloud/api/stock/opname/${header.id}/export-pdf?auditor_id=${userId}"
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                 context.startActivity(intent)
+                            }) {
+                                Icon(Icons.Default.Print, contentDescription = "Download PDF")
                             }
-                        }) {
-                            Icon(Icons.Default.Print, contentDescription = "Download PDF")
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                     },

@@ -11,7 +11,11 @@ import kotlinx.coroutines.launch
 
 sealed class CompanyUiState {
     object Loading : CompanyUiState()
-    data class Success(val lifecycleData: CompanyLifecycleData, val message: String? = null) : CompanyUiState()
+    data class Success(
+        val lifecycleData: CompanyLifecycleData,
+        val message: String? = null,
+        val actionError: String? = null
+    ) : CompanyUiState()
     data class Error(val errorMessage: String) : CompanyUiState()
 }
 

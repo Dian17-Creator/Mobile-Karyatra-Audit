@@ -79,6 +79,7 @@ fun MainContainer(
 
     var deactivationMessage by remember { mutableStateOf<String?>(null) }
     var isCompanyInactive by remember { mutableStateOf(false) }
+    var isDeletionPendingState by remember { mutableStateOf(false) }
 
     var isInitialStatusChecked by remember { mutableStateOf(false) }
     var initialStartDestination by remember { mutableStateOf(Screen.Home.route) }
@@ -94,6 +95,7 @@ fun MainContainer(
                     val isDeletionPending = data?.isDeletionPending ?: false
 
                     isCompanyInactive = isInactive || isDeletionPending
+                    isDeletionPendingState = isDeletionPending
 
                     if (isDeletionPending) {
                         if (isOwner) {
@@ -116,12 +118,14 @@ fun MainContainer(
         isInitialStatusChecked = true
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isOwner, isDeletionPendingState) {
         CompanyDeactivatedEventBus.deactivatedEvent.collect { message ->
             if (isOwner) {
                 isCompanyInactive = true
-                if (currentRoute != Screen.CompanyStatus.route && currentRoute != Screen.CompanyDangerZone.route) {
-                    navController.navigate(Screen.CompanyStatus.route) {
+                val targetRoute = if (isDeletionPendingState) Screen.CompanyDangerZone.route else Screen.CompanyStatus.route
+                val activeRoute = currentRoute ?: initialStartDestination
+                if (activeRoute != targetRoute) {
+                    navController.navigate(targetRoute) {
                         launchSingleTop = true
                     }
                 }
@@ -190,7 +194,10 @@ fun MainContainer(
             navController = navController,
             username = username,
             onLogout = onLogout,
-            onCompanyStatusLoaded = { isInactive -> isCompanyInactive = isInactive },
+            onCompanyStatusLoaded = { isInactive, isPending ->
+                isCompanyInactive = isInactive
+                isDeletionPendingState = isPending
+            },
             startDestination = initialStartDestination,
             modifier = Modifier.padding(
                 top = if (isAuditProsesScreen) 0.dp else innerPadding.calculateTopPadding(),

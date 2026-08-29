@@ -34,7 +34,7 @@ import id.my.karyatra.audit.data.viewmodel.CompanyUiState
 fun CompanyStatusScreen(
     onBack: () -> Unit,
     onLogout: () -> Unit = {},
-    onCompanyStatusLoaded: (Boolean) -> Unit = {},
+    onCompanyStatusLoaded: (Boolean, Boolean) -> Unit = { _, _ -> },
     viewModel: CompanyLifecycleViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -59,7 +59,8 @@ fun CompanyStatusScreen(
         val currentState = uiState
         if (currentState is CompanyUiState.Success) {
             val isInactive = currentState.lifecycleData.isCompanyInactive
-            onCompanyStatusLoaded(isInactive)
+            val isPending = currentState.lifecycleData.isDeletionPending
+            onCompanyStatusLoaded(isInactive || isPending, isPending)
             if (currentState.message != null) {
                 Toast.makeText(context, currentState.message, Toast.LENGTH_LONG).show()
                 password = ""
