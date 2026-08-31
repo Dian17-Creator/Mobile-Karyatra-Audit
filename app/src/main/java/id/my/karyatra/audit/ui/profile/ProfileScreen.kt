@@ -202,16 +202,25 @@ fun ProfileScreen(
                     Text("Edit Akun", color = primaryColor, fontWeight = FontWeight.Bold)
                 }
 
-                if (user?.is_owner == true && subState.subscriptionState?.isPro() == false) {
+                if (user?.is_owner == true) {
+                    val isPro = subState.subscriptionState?.isPro() == true
                     Button(
                         onClick = onUpgrade,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))
                     ) {
-                        Icon(Icons.Default.Star, contentDescription = null, tint = Color.Black)
+                        Icon(
+                            imageVector = if (isPro) Icons.Default.WorkspacePremium else Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color.Black
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Upgrade ke PRO", color = Color.Black, fontWeight = FontWeight.ExtraBold)
+                        Text(
+                            text = if (isPro) "Perpanjang Langganan" else "Upgrade ke PRO",
+                            color = Color.Black,
+                            fontWeight = FontWeight.ExtraBold
+                        )
                     }
                 }
             }
