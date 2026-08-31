@@ -135,23 +135,25 @@ fun AuditHomeScreen(
             }
         }
 
-        subState.subscriptionState?.let { state ->
-            if (state.isUpgradePending) {
-                InfoBanner(
-                    message = "Pengajuan Pro Anda sedang dalam verifikasi tim Finance",
-                    containerColor = Color(0xFFE3F2FD),
-                    contentColor = Color(0xFF0D47A1),
-                    icon = Icons.Default.Pending
-                )
-            } else if (state.isRejectionVisible) {
-                InfoBanner(
-                    message = "Pengajuan sebelumnya ditolak. Silakan ajukan ulang.",
-                    containerColor = Color(0xFFFFEBEE),
-                    contentColor = Color(0xFFB71C1C),
-                    icon = Icons.Default.Error
-                )
-            } else if (!state.isPro()) {
-                TryProBanner(onClick = onSubscription)
+        if (isOwner) {
+            subState.subscriptionState?.let { state ->
+                if (state.isUpgradePending) {
+                    InfoBanner(
+                        message = "Pengajuan Pro Anda sedang dalam verifikasi tim Finance",
+                        containerColor = Color(0xFFE3F2FD),
+                        contentColor = Color(0xFF0D47A1),
+                        icon = Icons.Default.Pending
+                    )
+                } else if (state.isRejectionVisible) {
+                    InfoBanner(
+                        message = "Pengajuan sebelumnya ditolak. Silakan ajukan ulang.",
+                        containerColor = Color(0xFFFFEBEE),
+                        contentColor = Color(0xFFB71C1C),
+                        icon = Icons.Default.Error
+                    )
+                } else if (!state.isPro()) {
+                    TryProBanner(onClick = onSubscription)
+                }
             }
         }
 
