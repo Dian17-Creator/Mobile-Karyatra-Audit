@@ -232,6 +232,7 @@ fun AuditExecutionScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .imePadding()
         ) {
             if (uiState.auditDetail == null) {
                 StartAuditSection(
