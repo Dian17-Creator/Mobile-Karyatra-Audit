@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,9 +15,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -295,6 +300,9 @@ fun StateANormalDeletionContent(
     val dangerRed = Color(0xFFDC2626)
     val roseBg = Color(0xFFFFF1F2)
 
+    val focusManager = LocalFocusManager.current
+    val passwordFocusRequester = remember { FocusRequester() }
+
     val isCompanyNameMatched = typedCompanyName.trim().equals(actualCompanyName.trim(), ignoreCase = true)
     val isFormValid = isCompanyNameMatched &&
             password.isNotBlank() &&
@@ -357,6 +365,10 @@ fun StateANormalDeletionContent(
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Masukkan nama perusahaan") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { passwordFocusRequester.requestFocus() }
+                    ),
                     shape = RoundedCornerShape(12.dp)
                 )
             }
@@ -365,11 +377,19 @@ fun StateANormalDeletionContent(
             OutlinedTextField(
                 value = password,
                 onValueChange = onPasswordChange,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(passwordFocusRequester),
                 label = { Text("Password Saat Ini") },
                 singleLine = true,
                 visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { focusManager.clearFocus() }
+                ),
                 trailingIcon = {
                     IconButton(onClick = onTogglePasswordVisibility) {
                         Icon(
@@ -478,6 +498,7 @@ fun StateBDeletionPendingContent(
     val darkRed = Color(0xFF991B1B)
     val roseBg = Color(0xFFFFF1F2)
     val successGreen = Color(0xFF16A34A)
+    val focusManager = LocalFocusManager.current
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -593,7 +614,13 @@ fun StateBDeletionPendingContent(
                     label = { Text("Password Saat Ini (Owner)") },
                     singleLine = true,
                     visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { focusManager.clearFocus() }
+                    ),
                     trailingIcon = {
                         IconButton(onClick = onTogglePasswordVisibility) {
                             Icon(
