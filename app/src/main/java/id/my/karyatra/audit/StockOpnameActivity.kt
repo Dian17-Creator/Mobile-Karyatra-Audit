@@ -225,6 +225,7 @@ fun StockOpnameExecutionScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .imePadding()
         ) {
             if (uiState.opnameDetail == null) {
                 StartOpnameSection(
